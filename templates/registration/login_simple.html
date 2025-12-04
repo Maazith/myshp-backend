@@ -1,0 +1,52 @@
+{% extends "admin/login.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        background: #000000 !important;
+        color: #FFFFFF !important;
+        font-family: 'Poppins', 'Inter', sans-serif !important;
+    }
+    #header {
+        background: #000000 !important;
+        border-bottom: 1px solid #E6E6E6 !important;
+    }
+    #header h1, #header h1 a {
+        color: #FFFFFF !important;
+        font-weight: 700 !important;
+    }
+    #content {
+        background: #000000 !important;
+    }
+    #content-main {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid #E6E6E6 !important;
+        border-radius: 16px !important;
+        padding: 30px !important;
+    }
+    .form-row label {
+        color: #FFFFFF !important;
+    }
+    .form-row input {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid #E6E6E6 !important;
+        color: #FFFFFF !important;
+        border-radius: 16px !important;
+        padding: 12px 15px !important;
+    }
+    .submit-row input {
+        background: #FFD700 !important;
+        color: #000000 !important;
+        border-radius: 16px !important;
+        padding: 12px 30px !important;
+    }
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">EdithCloths Admin</a></h1>
+{% endblock %}
+

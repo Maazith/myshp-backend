@@ -41,7 +41,10 @@ python manage.py create_superuser_from_env || echo "⚠️  Superuser creation s
 
 echo "🚀 Starting Gunicorn..."
 
+# Enable Django logging to see errors
+export PYTHONUNBUFFERED=1
+
 # Start Gunicorn - make sure we're using the correct module path
-echo "📍 Gunicorn command: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
-exec gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+echo "📍 Gunicorn command: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level debug --access-logfile - --error-logfile -"
+exec gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --log-level debug --access-logfile - --error-logfile -
 
