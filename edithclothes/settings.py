@@ -225,8 +225,12 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
         'https://myshp-frontend.vercel.app',
-        'https://*.vercel.app',  # Allow all Vercel preview deployments
+        'https://myshp-backend.onrender.com',  # Backend can also be an origin
     ]
+    # Allow additional origins from environment variable
+    additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+    if additional_origins:
+        CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
     CSRF_TRUSTED_ORIGINS = [
         'https://myshp-frontend.vercel.app',
         'https://*.vercel.app',
