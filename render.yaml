@@ -4,7 +4,6 @@ services:
     name: edithcloths-backend
     env: python
     plan: starter  # Starter plan - $7/month - 512MB RAM, 0.5 CPU
-    rootDir: backend
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
     startCommand: bash start.sh
     envVars:
