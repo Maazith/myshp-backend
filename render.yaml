@@ -1,0 +1,28 @@
+services:
+  # Django Web Service - Standard Plan
+  - type: web
+    name: edithcloths-backend
+    env: python
+    plan: standard  # $25/month - 2GB RAM, 1 CPU
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    startCommand: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    envVars:
+      - key: DEBUG
+        value: False
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: edithcloths-db
+          property: connectionString
+      - key: EMAIL_HOST_PASSWORD
+        sync: false  # Set manually in dashboard
+    healthCheckPath: /api/products/
+
+databases:
+  # PostgreSQL Database - Free tier (can upgrade later)
+  - name: edithcloths-db
+    plan: free  # Free tier for PostgreSQL
+    databaseName: edithcloths
+    user: edithcloths_user
+

@@ -190,3 +190,10 @@ EMAIL_HOST_PASSWORD=your-gmail-app-password
 
 **Ready for deployment!** 🎉
 
+---
+
+## 📚 Additional Guides
+
+- **Standard Plan Setup**: See `RENDER_STANDARD_PLAN_SETUP.md` for detailed step-by-step guide
+- **Quick Start**: See `RENDER_QUICK_START.md` for fast setup reference
+
