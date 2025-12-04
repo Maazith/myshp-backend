@@ -42,6 +42,27 @@ def get_user_cart(user):
     return cart
 
 
+class APIRootView(APIView):
+    """API root endpoint - shows available endpoints"""
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        return Response({
+            'message': 'EdithCloths API',
+            'version': '1.0',
+            'endpoints': {
+                'auth': '/api/auth/register, /api/auth/login, /api/auth/refresh, /api/auth/me',
+                'products': '/api/products/',
+                'categories': '/api/categories/',
+                'banners': '/api/banners/',
+                'cart': '/api/cart/',
+                'orders': '/api/orders/',
+                'settings': '/api/settings/',
+            },
+            'status': 'online'
+        })
+
+
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
