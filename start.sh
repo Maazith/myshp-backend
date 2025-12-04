@@ -35,9 +35,9 @@ python manage.py migrate --noinput
 
 echo "✅ Migrations complete!"
 
-# Create superuser from environment variables if provided
-echo "👤 Checking for superuser creation..."
-python manage.py create_superuser_from_env || echo "⚠️  Superuser creation skipped (set DJANGO_SUPERUSER_* env vars to auto-create)"
+# Ensure admin user exists (create or reset if needed)
+echo "👤 Ensuring admin user exists..."
+python manage.py ensure_admin_user || echo "⚠️  Admin user creation skipped"
 
 echo "🚀 Starting Gunicorn..."
 
