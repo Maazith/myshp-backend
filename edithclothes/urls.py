@@ -39,8 +39,8 @@ def root_view(request):
 
 urlpatterns = [
     path('', root_view, name='root'),
+    path('admin/dashboard/', dashboard_view, name='admin_dashboard'),  # Must come before admin.site.urls
     path('admin/', admin.site.urls),
-    path('admin/dashboard/', dashboard_view, name='admin_dashboard'),
     path('api/', include('shop.urls')),
 ]
 
