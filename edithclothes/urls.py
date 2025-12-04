@@ -18,9 +18,27 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
 from shop.admin import dashboard_view
 
+def root_view(request):
+    """Root URL handler - provides API information"""
+    return JsonResponse({
+        'message': 'EdithCloths Backend API',
+        'version': '1.0',
+        'endpoints': {
+            'admin': '/admin/',
+            'admin_dashboard': '/admin/dashboard/',
+            'api': '/api/',
+            'api_root': '/api/',
+            'api_products': '/api/products/',
+            'api_auth': '/api/auth/login, /api/auth/register',
+        },
+        'status': 'online'
+    })
+
 urlpatterns = [
+    path('', root_view, name='root'),
     path('admin/', admin.site.urls),
     path('admin/dashboard/', dashboard_view, name='admin_dashboard'),
     path('api/', include('shop.urls')),
