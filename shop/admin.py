@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, reverse
 from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
 from django.utils.html import format_html
 from django.contrib import messages
 from django.db.models import Count, Sum, Q, F
@@ -61,11 +62,33 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
+    list_display = ('website_name', 'contact_email', 'contact_phone', 'updated_at')
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('website_name', 'logo', 'homepage_banner', 'about_text')
+        }),
+        ('Contact Information', {
+            'fields': ('contact_email', 'contact_phone', 'contact_address', 'whatsapp_number', 'instagram_link')
+        }),
+        ('Payment Settings', {
+            'fields': ('upi_id', 'qr_code_image')
+        }),
+    )
+    
     def has_add_permission(self, request):
         return not SiteSettings.objects.exists()
 
     def has_delete_permission(self, request, obj=None):
         return False
+    
+    def changelist_view(self, request, extra_context=None):
+        # Redirect to change form if settings exist
+        from django.http import HttpResponseRedirect
+        from django.urls import reverse
+        settings = SiteSettings.load()
+        if settings.pk:
+            return HttpResponseRedirect(reverse('admin:shop_sitesettings_change', args=[settings.pk]))
+        return super().changelist_view(request, extra_context)
 
 
 class CartItemInline(admin.TabularInline):
