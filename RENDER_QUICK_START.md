@@ -1,6 +1,9 @@
-# ⚡ Render Quick Start - Standard Plan
+# ⚡ Render Quick Start
 
 ## 🎯 Quick Setup (5 Minutes)
+
+### Option 1: Free Plan (Testing) 🆓
+**Recommended for initial testing**
 
 ### 1. Create PostgreSQL Database
 ```
@@ -15,8 +18,20 @@ Create Database
 New + → Web Service
 Repository: Maazith/myshp-backend
 Build Command: pip install -r requirements.txt && python manage.py collectstatic --noinput
+Start Command: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
+Instance: Free ($0/month) - For testing
+```
+
+### Option 2: Standard Plan (Production) 💼
+**Recommended for production**
+
+### 2. Create Web Service
+```
+New + → Web Service
+Repository: Maazith/myshp-backend
+Build Command: pip install -r requirements.txt && python manage.py collectstatic --noinput
 Start Command: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120
-Instance: Standard ($25/month)
+Instance: Standard ($25/month) - For production
 ```
 
 ### 3. Environment Variables
