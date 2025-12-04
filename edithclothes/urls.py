@@ -48,12 +48,19 @@ urlpatterns = [
 # Media files need to be served separately
 from django.views.static import serve
 from django.urls import re_path
+import os
 
 # Serve media files in both development and production
-# In production, Render will serve these files
-urlpatterns += [
-    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
-]
+# Only serve if MEDIA_ROOT exists and is accessible
+try:
+    if settings.MEDIA_ROOT and os.path.exists(settings.MEDIA_ROOT):
+        urlpatterns += [
+            re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+        ]
+except Exception:
+    # If media root doesn't exist or can't be accessed, skip media serving
+    # This prevents 500 errors on first deployment
+    pass
 
 # Only serve static files in development (WhiteNoise handles in production)
 if settings.DEBUG:

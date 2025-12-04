@@ -33,12 +33,12 @@ DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 if DEBUG:
     ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 else:
-    # Production hosts
+    # Production hosts - Render uses specific domain format
     ALLOWED_HOSTS = [
         "myshp-backend.onrender.com",
-        "*.onrender.com",
+        ".onrender.com",  # Allow all Render subdomains
         "myshp-frontend.vercel.app",
-        "*.vercel.app",
+        ".vercel.app",  # Allow all Vercel subdomains
     ]
     # Allow additional hosts from environment variable
     additional_hosts = os.environ.get("ALLOWED_HOSTS", "")
@@ -226,16 +226,20 @@ else:
         CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
 
 # Security Settings for Production (HTTPS)
+# Note: SECURE_SSL_REDIRECT can cause issues on Render if not configured properly
+# Render handles HTTPS at the load balancer level, so we disable SSL redirect
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    # Disable SSL redirect - Render handles HTTPS at load balancer
+    SECURE_SSL_REDIRECT = False  # Render handles HTTPS, don't force redirect
+    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS
+    CSRF_COOKIE_SECURE = True  # Secure CSRF tokens
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    # HSTS settings - only enable if you have custom domain with HTTPS
+    SECURE_HSTS_SECONDS = 0  # Disable HSTS for now (can cause issues)
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
 else:
     # Development settings
     SECURE_SSL_REDIRECT = False
