@@ -14,9 +14,10 @@ class Command(BaseCommand):
         if not settings.logo:
             settings.website_name = 'EdithCloths'
             settings.upi_id = 'your-upi-id@paytm'
-            settings.contact_phone = '+91 9876543210'
-            settings.contact_email = 'contact@edithcloths.com'
-            settings.contact_address = '123 Fashion Street, Mumbai, India'
+            settings.contact_phone = '6381902506'
+            settings.contact_email = 'edith0530s@gmail.com'
+            settings.contact_address = '35/1 sivan sannadhi street keeranur (PT) kulathur (TK) Pudukkottai (DT) 622502'
+            settings.whatsapp_number = '6381902506'
             settings.about_text = 'EdithCloths is your premium destination for luxury fashion. We offer the finest quality clothing for men and women.'
             settings.save()
             self.stdout.write(self.style.SUCCESS('✓ Created SiteSettings'))
