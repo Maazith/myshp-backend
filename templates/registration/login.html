@@ -3,10 +3,8 @@
 
 {% block extrastyle %}
 {{ block.super }}
-{% comment %}Load custom admin CSS only if it exists{% endcomment %}
-{% if static 'admin/css/custom_admin.css' %}
+{% comment %}Load custom admin CSS - Django will handle missing files gracefully{% endcomment %}
 <link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
-{% endif %}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
     /* Override admin login styles */
