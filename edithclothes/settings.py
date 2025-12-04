@@ -163,6 +163,14 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Ensure media directory exists (prevent errors on first deployment)
+try:
+    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+except (OSError, PermissionError):
+    # If we can't create media directory, continue anyway
+    # This prevents errors on first deployment
+    pass
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
