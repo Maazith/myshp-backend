@@ -37,7 +37,11 @@ echo "✅ Migrations complete!"
 
 # Ensure admin user exists (create or reset if needed)
 echo "👤 Ensuring admin user exists..."
-python manage.py ensure_admin_user || echo "⚠️  Admin user creation skipped"
+echo "📋 Checking environment variables..."
+echo "  DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-not set}"
+echo "  DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-not set}"
+echo "  DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:+set (hidden)}"
+python manage.py ensure_admin_user --reset || echo "⚠️  Admin user creation skipped"
 
 echo "🚀 Starting Gunicorn..."
 

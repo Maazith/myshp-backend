@@ -39,6 +39,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Get credentials from arguments, environment, or defaults
+        # Priority: command args > environment variables > defaults
         username = (
             options['username']
             or os.environ.get('DJANGO_SUPERUSER_USERNAME')
@@ -54,6 +55,12 @@ class Command(BaseCommand):
             or os.environ.get('DJANGO_SUPERUSER_PASSWORD')
             or 'admin123'
         )
+        
+        # Log what we're using (hide password)
+        self.stdout.write(f'📋 Using credentials:')
+        self.stdout.write(f'   Username: {username}')
+        self.stdout.write(f'   Email: {email}')
+        self.stdout.write(f'   Password: {"*" * len(password)} (hidden)')
 
         # Check if user exists
         user_exists = User.objects.filter(username=username).exists()
