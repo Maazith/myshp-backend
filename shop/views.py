@@ -100,15 +100,26 @@ class LoginView(TokenObtainPairView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        if response.status_code == status.HTTP_200_OK:
-            username = request.data.get('username') or request.data.get('email')
-            try:
-                user = User.objects.get(username=username)
-            except User.DoesNotExist:
-                user = None
-            response.data['user'] = UserSerializer(user).data if user else None
-        return response
+        try:
+            response = super().post(request, *args, **kwargs)
+            if response.status_code == status.HTTP_200_OK:
+                username = request.data.get('username') or request.data.get('email')
+                try:
+                    user = User.objects.get(username=username)
+                    response.data['user'] = UserSerializer(user).data
+                except User.DoesNotExist:
+                    # User doesn't exist - this shouldn't happen if login succeeded
+                    response.data['user'] = None
+            return response
+        except Exception as e:
+            # Handle authentication errors more gracefully
+            return Response(
+                {
+                    'detail': 'Invalid username or password. Please check your credentials and try again.',
+                    'error': str(e)
+                },
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class MeView(APIView):
