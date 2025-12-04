@@ -231,16 +231,17 @@ else:
     additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
     if additional_origins:
         CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
+    
     CSRF_TRUSTED_ORIGINS = [
         'https://myshp-frontend.vercel.app',
-        'https://*.vercel.app',
+        'https://.vercel.app',  # Correct wildcard syntax for Django
         'https://myshp-backend.onrender.com',
+        'https://.onrender.com',  # Correct wildcard syntax for Django
     ]
-    # Allow additional origins from environment variable
-    additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
-    if additional_origins:
-        CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
-        CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
+    # Allow additional CSRF origins from environment variable
+    additional_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+    if additional_csrf_origins:
+        CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_csrf_origins.split(",")])
 
 # Security Settings for Production (HTTPS)
 # Note: SECURE_SSL_REDIRECT can cause issues on Render if not configured properly
