@@ -30,7 +30,10 @@
 {% endblock %}
 
 {% block content %}
-<h1>Store Dashboard</h1>
+<div style="margin-bottom: 2rem;">
+    <p class="badge">Admin Dashboard</p>
+    <h1 class="section-title" style="margin-bottom: 0;">Store Overview</h1>
+</div>
 
 <div class="dashboard-stats">
     <div class="stat-card">
@@ -59,8 +62,8 @@
     </div>
 </div>
 
-<div class="dashboard-section">
-    <h2>Recent Orders</h2>
+<div class="dashboard-section glass-card">
+    <h2>📦 Recent Orders</h2>
     <table>
         <thead>
             <tr>
@@ -89,8 +92,8 @@
     </table>
 </div>
 
-<div class="dashboard-section">
-    <h2>Order Status Breakdown</h2>
+<div class="dashboard-section glass-card">
+    <h2>📊 Order Status Breakdown</h2>
     <table>
         <thead>
             <tr>
