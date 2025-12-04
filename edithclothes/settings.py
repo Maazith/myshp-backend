@@ -28,7 +28,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-9o(%hgr4x$ii_ct2m(hw8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", ".vercel.app", ".render.com", "myshp-backend.onrender.com", "myshp-frontend.vercel.app"]
 
 
 # Application definition
@@ -178,6 +178,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:5500',
     'http://127.0.0.1:5500',
+    'https://myshp-frontend.vercel.app',
+    'https://myshp-frontend.vercel.app',
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -187,6 +189,9 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:5500',
     'http://127.0.0.1:5500',
+    'https://myshp-frontend.vercel.app',
+    'https://*.vercel.app',
+    'https://myshp-backend.onrender.com',
 ]
 
 # Email Configuration
