@@ -66,37 +66,20 @@ class Command(BaseCommand):
         user_exists = User.objects.filter(username=username).exists()
 
         if user_exists:
-            if options['reset']:
-                user = User.objects.get(username=username)
-                user.set_password(password)
-                user.email = email
-                user.is_staff = True
-                user.is_superuser = True
-                user.is_active = True
-                user.save()
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f'✅ Reset password for existing superuser: {username}'
-                    )
+            # Always reset password and ensure user is active and superuser
+            # This ensures environment variables always take effect
+            user = User.objects.get(username=username)
+            user.set_password(password)
+            user.email = email
+            user.is_staff = True
+            user.is_superuser = True
+            user.is_active = True
+            user.save()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f'✅ Reset password and updated superuser: {username}'
                 )
-            else:
-                user = User.objects.get(username=username)
-                if not user.is_superuser:
-                    user.is_staff = True
-                    user.is_superuser = True
-                    user.is_active = True
-                    user.save()
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f'✅ Upgraded existing user to superuser: {username}'
-                        )
-                    )
-                else:
-                    self.stdout.write(
-                        self.style.WARNING(
-                            f'⚠️  Superuser {username} already exists. Use --reset to change password.'
-                        )
-                    )
+            )
         else:
             # Create new superuser
             User.objects.create_superuser(
