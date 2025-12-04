@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.conf import settings
+from django.db.models import Q
 import json
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -10,13 +12,16 @@ from .models import (
     Category,
     Product,
     ProductVariant,
+    ProductImage,
     Banner,
     Cart,
     CartItem,
     Order,
     OrderItem,
     PaymentProof,
+    SiteSettings,
 )
+from .utils import send_order_notification_to_admin, send_order_confirmation_to_user
 from .serializers import (
     RegisterSerializer,
     UserSerializer,
@@ -28,6 +33,7 @@ from .serializers import (
     OrderSerializer,
     CheckoutSerializer,
     PaymentProofSerializer,
+    SiteSettingsSerializer,
 )
 
 
@@ -41,7 +47,30 @@ class RegisterView(APIView):
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            # Format validation errors for better user experience
+            errors = {}
+            for field, messages in serializer.errors.items():
+                if isinstance(messages, list):
+                    errors[field] = messages[0] if messages else 'Invalid value'
+                else:
+                    errors[field] = str(messages)
+            
+            # Return user-friendly error message
+            error_message = 'Registration failed. '
+            if 'email' in errors:
+                error_message += errors['email']
+            elif 'username' in errors:
+                error_message += errors['username']
+            elif 'password' in errors:
+                error_message += errors['password']
+            else:
+                error_message += 'Please check your input and try again.'
+            
+            return Response(
+                {'detail': error_message, 'errors': errors},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         user = serializer.save()
         return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
@@ -71,14 +100,134 @@ class ProductListView(APIView):
 
     def get(self, request):
         gender = request.query_params.get('gender')
-        queryset = Product.objects.filter(is_active=True)
+        expand_by_color = request.query_params.get('expand_by_color', 'false').lower() == 'true'
+        
+        queryset = Product.objects.filter(is_active=True).prefetch_related('variants', 'variants__images', 'images', 'category')
         if gender in dict(Product.Gender.choices):
-            queryset = queryset.filter(gender=gender)
-        serializer = ProductSerializer(queryset, many=True, context={'request': request})
-        return Response(serializer.data)
+            # Include products with matching gender OR UNISEX products
+            queryset = queryset.filter(
+                Q(gender=gender) | Q(gender=Product.Gender.UNISEX)
+            )
+        
+        # If expand_by_color is true, return one entry per color variant
+        if expand_by_color:
+            expanded_products = []
+            for product in queryset:
+                # Get all unique colors for this product
+                unique_colors = product.variants.values_list('color', flat=True).distinct()
+                
+                if not unique_colors:
+                    # No variants, show product as-is with base price
+                    expanded_products.append({
+                        'product_id': product.id,
+                        'title': product.title,
+                        'color': None,
+                        'price': float(product.base_price),
+                        'image_url': self._get_product_image_url(product, request),
+                        'category': {
+                            'id': product.category.id,
+                            'name': product.category.name,
+                            'slug': product.category.slug,
+                        },
+                        'slug': product.slug,
+                        'gender': product.gender,
+                        'has_stock': False,
+                    })
+                else:
+                    # Create one entry per color
+                    for color in unique_colors:
+                        # Get first variant with this color to determine price
+                        color_variant = product.variants.filter(color=color).first()
+                        price = float(color_variant.price) if color_variant else float(product.base_price)
+                        
+                        # Check if any variant of this color has stock
+                        has_stock = product.variants.filter(color=color, stock__gt=0).exists()
+                        
+                        # Get image for this color variant
+                        image_url = self._get_color_image_url(product, color, request)
+                        
+                        expanded_products.append({
+                            'product_id': product.id,
+                            'title': f"{product.title} - {color}",
+                            'base_title': product.title,  # Keep original title
+                            'color': color,
+                            'price': price,
+                            'image_url': image_url,
+                            'category': {
+                                'id': product.category.id,
+                                'name': product.category.name,
+                                'slug': product.category.slug,
+                            },
+                            'slug': product.slug,
+                            'gender': product.gender,
+                            'has_stock': has_stock,
+                        })
+            
+            # Debug logging
+            print(f"📦 Expanded products by color - Gender filter: {gender}, Total color variants: {len(expanded_products)}")
+            return Response(expanded_products)
+        else:
+            # Original behavior - return products as-is
+            serializer = ProductSerializer(queryset, many=True, context={'request': request})
+            return Response(serializer.data)
+    
+    def _get_product_image_url(self, product, request):
+        """Get product hero image or first product image"""
+        if product.hero_media and hasattr(product.hero_media, 'url'):
+            url = product.hero_media.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        
+        # Try product images (not linked to specific variant)
+        first_image = product.images.filter(variant__isnull=True).first()
+        if first_image and first_image.image and hasattr(first_image.image, 'url'):
+            url = first_image.image.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        
+        # Try first variant image if no product-level images
+        if product.variants.exists():
+            first_variant = product.variants.first()
+            variant_image = ProductImage.objects.filter(variant=first_variant, is_primary=True).first() or \
+                           ProductImage.objects.filter(variant=first_variant).first()
+            if variant_image and variant_image.image and hasattr(variant_image.image, 'url'):
+                url = variant_image.image.url
+                if request:
+                    return request.build_absolute_uri(url)
+                return url
+        
+        return None
+    
+    def _get_color_image_url(self, product, color, request):
+        """Get first image for a specific color variant"""
+        # Try to find variant-specific images
+        variant = product.variants.filter(color=color).first()
+        if variant:
+            # Get ProductImage objects linked to this variant
+            variant_image = ProductImage.objects.filter(variant=variant, is_primary=True).first() or \
+                           ProductImage.objects.filter(variant=variant).first()
+            if variant_image and variant_image.image and hasattr(variant_image.image, 'url'):
+                url = variant_image.image.url
+                if request:
+                    return request.build_absolute_uri(url)
+                return url
+        
+        # Fallback to product hero image or first product image
+        return self._get_product_image_url(product, request)
 
 
 class ProductDetailView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, slug):
+        product = get_object_or_404(Product, slug=slug, is_active=True)
+        serializer = ProductSerializer(product, context={'request': request})
+        return Response(serializer.data)
+
+
+class ProductDetailByIdView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, pk):
@@ -98,28 +247,196 @@ class ProductCreateView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def post(self, request):
-        serializer = ProductSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        product = serializer.save()
-        self._sync_variants(product, request.data.get('variants'))
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            # Validate required fields
+            if not request.data.get('title'):
+                return Response(
+                    {'detail': 'Product title is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            if not request.data.get('category_id'):
+                return Response(
+                    {'detail': 'Category is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Base price is optional - will be calculated from variants if not provided
+            base_price = request.data.get('base_price', 0)
+            if not base_price or float(base_price) == 0:
+                # Will be set from variant prices after variants are created
+                base_price = 0
+            
+            serializer = ProductSerializer(data=request.data, context={'request': request})
+            if not serializer.is_valid():
+                # Format validation errors better
+                errors = {}
+                for field, messages in serializer.errors.items():
+                    if isinstance(messages, list):
+                        errors[field] = messages[0] if messages else 'Invalid value'
+                    else:
+                        errors[field] = str(messages)
+                return Response(
+                    {'detail': errors if len(errors) > 1 else list(errors.values())[0]},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            product = serializer.save()
+            
+            # Sync variants first (they contain price information)
+            created_variants_dict = self._sync_variants(product, request.data.get('variants'))
+            
+            # Calculate base_price from first variant if not set
+            if not product.base_price or product.base_price == 0:
+                # Get first variant from created variants
+                first_variant = None
+                if created_variants_dict:
+                    # created_variants_dict is a dict by color, get first variant
+                    for color, variants_list in created_variants_dict.items():
+                        if variants_list:
+                            first_variant = variants_list[0]
+                            break
+                
+                if first_variant:
+                    # Get price from first variant (use price_override or product.base_price)
+                    calculated_price = float(first_variant.price)
+                    if calculated_price > 0:
+                        product.base_price = calculated_price
+                        product.save(update_fields=['base_price'])
+            
+            # Ensure product is active
+            if not product.is_active:
+                product.is_active = True
+                product.save()
+            
+            self._sync_variant_images(product, request.FILES)
+            # Return full product data
+            product_data = ProductSerializer(product, context={'request': request}).data
+            print(f"✅ Product created: {product.title} (ID: {product.id}, Gender: {product.gender}, Active: {product.is_active})")
+            return Response(product_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            import traceback
+            error_detail = str(e)
+            if settings.DEBUG:
+                error_detail += f'\n\nTraceback:\n{traceback.format_exc()}'
+            return Response(
+                {'detail': f'Error creating product: {error_detail}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     def _sync_variants(self, product, variants_raw):
         if not variants_raw:
-            return
+            # Auto-create default variant if none provided
+            default_variant = None
+            if not product.variants.exists():
+                default_variant = ProductVariant.objects.create(
+                    product=product,
+                    size='M',
+                    color='Black',
+                    stock=0
+                )
+            if default_variant:
+                return {'Black': [default_variant]}
+            return {}
         try:
             variants = json.loads(variants_raw) if isinstance(variants_raw, str) else variants_raw
         except json.JSONDecodeError:
+            # If JSON is invalid, create default variant
+            if not product.variants.exists():
+                ProductVariant.objects.create(
+                    product=product,
+                    size='M',
+                    color='Black',
+                    stock=0
+                )
             return
+        
+        # Delete existing variants and their images
+        # Delete images first to avoid foreign key constraint issues
+        try:
+            ProductImage.objects.filter(product=product).delete()
+        except Exception as e:
+            # Table might not exist yet or other error - log and continue
+            print(f"Note: Could not delete ProductImage records: {e}")
+        
+        # Now delete variants
         ProductVariant.objects.filter(product=product).delete()
+        
+        # Create new variants
+        created_variants = {}
         for variant in variants:
-            ProductVariant.objects.create(
+            color = variant.get('color', 'Black')
+            size = variant.get('size', 'M')
+            stock = variant.get('stock', 0)
+            price_override = variant.get('price')  # Price override per color
+            if price_override:
+                try:
+                    price_override = float(price_override)
+                except (ValueError, TypeError):
+                    price_override = None
+            
+            variant_obj, created = ProductVariant.objects.get_or_create(
                 product=product,
-                size=variant.get('size', 'M'),
-                color=variant.get('color', 'Black'),
-                stock=variant.get('stock', 0),
-                price_override=variant.get('price'),
+                size=size,
+                color=color,
+                defaults={
+                    'stock': stock,
+                    'price_override': price_override
+                }
             )
+            if not created:
+                variant_obj.stock = stock
+                if price_override:
+                    variant_obj.price_override = price_override
+                variant_obj.save()
+            
+            # Store variant by color for image linking
+            if color not in created_variants:
+                created_variants[color] = []
+            created_variants[color].append(variant_obj)
+        
+        return created_variants
+    
+    def _sync_variant_images(self, product, files):
+        """Process and link images to variants based on FormData keys"""
+        if not files:
+            return
+        
+        # Process variant images (format: variant_{idx}_color_{color}_image_{imgIdx})
+        variant_images_map = {}
+        
+        for key, file in files.items():
+            if key.startswith('variant_') and '_color_' in key:
+                # Parse: variant_{idx}_color_{color}_image_{imgIdx}
+                parts = key.split('_')
+                try:
+                    color_idx = parts.index('color')
+                    color = parts[color_idx + 1]
+                    
+                    if color not in variant_images_map:
+                        variant_images_map[color] = []
+                    variant_images_map[color].append(file)
+                except (IndexError, ValueError):
+                    continue
+        
+        # Link images to variants
+        for color, images in variant_images_map.items():
+            # Find variants with this color
+            variants = ProductVariant.objects.filter(product=product, color=color)
+            if variants.exists():
+                variant = variants.first()  # Use first variant of this color
+                for idx, image_file in enumerate(images):
+                    try:
+                        ProductImage.objects.create(
+                            product=product,
+                            variant=variant,
+                            image=image_file,
+                            display_order=idx,
+                            is_primary=(idx == 0)
+                        )
+                    except Exception as e:
+                        print(f"Error creating ProductImage: {e}")
+                        # Continue with other images even if one fails
 
 
 class ProductUpdateView(APIView):
@@ -152,9 +469,26 @@ class ProductDeleteView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def delete(self, request, pk):
-        product = get_object_or_404(Product, pk=pk)
-        product.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        try:
+            product = get_object_or_404(Product, pk=pk)
+            product_title = product.title
+            # Delete related objects first (variants, images, etc.)
+            product.variants.all().delete()
+            if hasattr(product, 'images'):
+                product.images.all().delete()
+            product.delete()
+            print(f"✅ Product deleted: {product_title} (ID: {pk})")
+            return Response({'detail': 'Product deleted successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            import traceback
+            error_detail = str(e)
+            if settings.DEBUG:
+                error_detail += f'\n\nTraceback:\n{traceback.format_exc()}'
+            print(f"❌ Error deleting product: {error_detail}")
+            return Response(
+                {'detail': f'Error deleting product: {error_detail}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class CategoryListView(APIView):
@@ -195,7 +529,7 @@ class BannerListView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        serializer = BannerSerializer(Banner.objects.filter(is_active=True), many=True)
+        serializer = BannerSerializer(Banner.objects.filter(is_active=True), many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -203,10 +537,40 @@ class BannerUploadView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def post(self, request):
-        serializer = BannerSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        try:
+            # Check if file is present
+            if 'media' not in request.FILES:
+                return Response(
+                    {'detail': 'Banner image file is required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validate file type
+            uploaded_file = request.FILES['media']
+            allowed_types = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
+            if uploaded_file.content_type not in allowed_types:
+                return Response(
+                    {'detail': f'Invalid file type: {uploaded_file.content_type}. Allowed types: PNG, JPG, JPEG, GIF, WEBP'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Validate file size (max 10MB)
+            max_size = 10 * 1024 * 1024  # 10MB
+            if uploaded_file.size > max_size:
+                return Response(
+                    {'detail': f'File size too large: {uploaded_file.size} bytes. Maximum size is 10MB'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            serializer = BannerSerializer(data=request.data, context={'request': request})
+            serializer.is_valid(raise_exception=True)
+            banner = serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response(
+                {'detail': f'Error uploading banner: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class BannerDeleteView(APIView):
@@ -274,9 +638,21 @@ class CheckoutView(APIView):
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        
+        # Build full shipping address from separate fields for backward compatibility
+        validated_data = serializer.validated_data
+        full_address = f"{validated_data.get('address', '')}\n{validated_data.get('street_name', '')}\n{validated_data.get('city_town', '')}, {validated_data.get('district', '')} - {validated_data.get('pin_code', '')}"
+        
         order = Order.objects.create(
             user=request.user,
-            shipping_address=serializer.validated_data['shipping_address'],
+            shipping_address=validated_data.get('shipping_address', full_address),
+            name=validated_data['name'],
+            phone_number=validated_data['phone_number'],
+            pin_code=validated_data['pin_code'],
+            street_name=validated_data['street_name'],
+            city_town=validated_data['city_town'],
+            district=validated_data['district'],
+            address=validated_data['address'],
             total_amount=cart.total_amount,
         )
         for item in cart.items.select_related('variant', 'variant__product'):
@@ -299,19 +675,41 @@ class ConfirmPaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        serializer = PaymentProofSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        order = get_object_or_404(Order, pk=serializer.validated_data['order'].id, user=request.user)
-        order.upi_reference = serializer.validated_data['reference_id']
+        order_id = request.data.get('order')
+        if isinstance(order_id, str):
+            try:
+                order_id = int(order_id)
+            except ValueError:
+                return Response({'detail': 'Invalid order ID'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        order = get_object_or_404(Order, pk=order_id, user=request.user)
+        reference_id = request.data.get('reference_id', '')
+        proof_file = request.FILES.get('proof_file')
+        notes = request.data.get('notes', '')
+        
+        # Validate that screenshot is provided
+        if not proof_file:
+            return Response({'detail': 'Payment screenshot is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not reference_id:
+            return Response({'detail': 'UPI Reference ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        order.upi_reference = reference_id
+        order.status = 'PAYMENT_PENDING'  # Set status to payment pending
         order.save()
+        
         proof, _ = PaymentProof.objects.update_or_create(
             order=order,
             defaults={
-                'reference_id': serializer.validated_data['reference_id'],
-                'proof_file': serializer.validated_data.get('proof_file'),
-                'notes': serializer.validated_data.get('notes', ''),
+                'reference_id': reference_id,
+                'proof_file': proof_file,
+                'notes': notes,
             },
         )
+        
+        # Send email notification to admin
+        send_order_notification_to_admin(order)
+        
         return Response(OrderSerializer(order).data)
 
 
@@ -329,7 +727,7 @@ class AdminOrdersView(APIView):
 
     def get(self, request):
         orders = Order.objects.all().order_by('-created_at')
-        serializer = OrderSerializer(orders, many=True)
+        serializer = OrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -339,11 +737,16 @@ class AdminMarkPaidView(APIView):
     def post(self, request, pk):
         order = get_object_or_404(Order, pk=pk)
         order.payment_verified = True
+        order.status = 'PLACED'  # Mark order as placed when admin approves
         order.save()
         if hasattr(order, 'payment_proof'):
             proof = order.payment_proof
             proof.verified = True
             proof.save()
+        
+        # Send confirmation email to user
+        send_order_confirmation_to_user(order)
+        
         return Response(OrderSerializer(order).data)
 
 
@@ -358,3 +761,23 @@ class AdminOrderStatusView(APIView):
         order.status = status_value
         order.save()
         return Response(OrderSerializer(order).data)
+
+
+class SiteSettingsView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        settings = SiteSettings.load()
+        serializer = SiteSettingsSerializer(settings, context={'request': request})
+        return Response(serializer.data)
+
+
+class SiteSettingsUpdateView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def put(self, request):
+        settings = SiteSettings.load()
+        serializer = SiteSettingsSerializer(settings, data=request.data, partial=True, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .header {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            background-color: #ffffff;
+            padding: 20px;
+            margin-top: 10px;
+        }
+        .order-info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid #000000;
+        }
+        .order-items {
+            margin: 15px 0;
+        }
+        .order-items ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .order-items li {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        .total {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #000000;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>EDITHCLOTHS</h1>
+            <h2>New Order Payment Confirmation</h2>
+        </div>
+        <div class="content">
+            <p>Hello Admin,</p>
+            <p>A customer has confirmed payment for a new order. Please review and approve the order.</p>
+            
+            <div class="order-info">
+                <h3>Order Details</h3>
+                <p><strong>Order Number:</strong> {{ order_number }}</p>
+                <p><strong>Customer Name:</strong> {{ customer_name }}</p>
+                <p><strong>Customer Email:</strong> {{ customer_email }}</p>
+                <p><strong>Order Date:</strong> {{ order.created_at|date:"F d, Y H:i" }}</p>
+            </div>
+            
+            <div class="order-items">
+                <h3>Order Items:</h3>
+                {{ items_html|safe }}
+            </div>
+            
+            <div class="order-info">
+                <p><strong>Shipping Address:</strong></p>
+                <p>{{ shipping_address|linebreaks }}</p>
+            </div>
+            
+            <div class="order-info">
+                <h3>Payment Information</h3>
+                <p><strong>Total Amount:</strong> ₹{{ total_amount }}</p>
+                <p><strong>UPI Reference:</strong> {{ upi_reference }}</p>
+                {{ payment_proof_html|safe }}
+            </div>
+            
+            <div class="total">
+                <p>Total Amount: ₹{{ total_amount }}</p>
+            </div>
+            
+            <p style="margin-top: 30px;">
+                <strong>Action Required:</strong> Please verify the payment and approve the order in the admin panel.
+            </p>
+        </div>
+        <div class="footer">
+            <p>This is an automated email from EdithCloths Order Management System.</p>
+        </div>
+    </div>
+</body>
+</html>
+
+

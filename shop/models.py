@@ -40,7 +40,7 @@ class Product(TimeStampedModel):
     category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=220, unique=True, blank=True)
-    description = models.TextField()
+    description = models.TextField(blank=True, default='')
     base_price = models.DecimalField(max_digits=10, decimal_places=2)
     gender = models.CharField(max_length=10, choices=Gender.choices, default=Gender.UNISEX)
     hero_media = models.FileField(upload_to='products/', blank=True, null=True)
@@ -59,7 +59,17 @@ class Product(TimeStampedModel):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
+        is_new = self.pk is None
         super().save(*args, **kwargs)
+        
+        # Auto-create default variant if no variants exist
+        if is_new and not self.variants.exists():
+            ProductVariant.objects.create(
+                product=self,
+                size='M',
+                color='Black',
+                stock=0
+            )
 
     def __str__(self):
         return self.title
@@ -88,6 +98,21 @@ class ProductVariant(TimeStampedModel):
     @property
     def price(self):
         return self.price_override or self.product.base_price
+
+
+class ProductImage(TimeStampedModel):
+    product = models.ForeignKey(Product, related_name='images', on_delete=models.CASCADE)
+    variant = models.ForeignKey('ProductVariant', related_name='images', on_delete=models.CASCADE, null=True, blank=True, help_text="Link image to specific color variant")
+    image = models.FileField(upload_to='products/images/')
+    display_order = models.PositiveIntegerField(default=0)
+    is_primary = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['display_order', 'created_at']
+
+    def __str__(self):
+        variant_info = f" ({self.variant.color})" if self.variant else ""
+        return f"{self.product.title}{variant_info} - Image {self.display_order}"
 
 
 class Banner(TimeStampedModel):
@@ -143,17 +168,27 @@ class CartItem(TimeStampedModel):
 
 class Order(TimeStampedModel):
     STATUS_CHOICES = [
-        ('PLACED', 'Order Placed'),
+        ('PLACED', 'Placed'),
+        ('PAYMENT_PENDING', 'Payment Pending'),
+        ('PAYMENT_VERIFIED', 'Payment Verified'),
         ('SHIPPED', 'Shipped'),
-        ('REACHED', 'Reached Local Transport Office'),
         ('OUT_FOR_DELIVERY', 'Out for Delivery'),
         ('DELIVERED', 'Delivered'),
+        ('CANCELLED', 'Cancelled'),
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='orders', on_delete=models.CASCADE)
     order_number = models.CharField(max_length=20, unique=True, editable=False, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PLACED')
-    shipping_address = models.TextField()
+    shipping_address = models.TextField()  # Kept for backward compatibility
+    # Separate address fields
+    name = models.CharField(max_length=100, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    pin_code = models.CharField(max_length=10, blank=True)
+    street_name = models.CharField(max_length=200, blank=True)
+    city_town = models.CharField(max_length=100, blank=True)
+    district = models.CharField(max_length=100, blank=True)
+    address = models.TextField(blank=True)  # Full address field
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
     upi_reference = models.CharField(max_length=100, blank=True)
     payment_verified = models.BooleanField(default=False)
@@ -161,6 +196,11 @@ class Order(TimeStampedModel):
     def save(self, *args, **kwargs):
         if not self.order_number:
             self.order_number = str(uuid.uuid4()).split('-')[0].upper()
+        # Auto-set status based on payment verification
+        if not self.payment_verified and self.status == 'PLACED':
+            self.status = 'PAYMENT_PENDING'
+        elif self.payment_verified and self.status == 'PAYMENT_PENDING':
+            self.status = 'PAYMENT_VERIFIED'
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -190,4 +230,39 @@ class PaymentProof(TimeStampedModel):
     def __str__(self):
         return f"PaymentProof #{self.order.order_number}"
 
-# Create your models here.
+
+class SiteSettings(models.Model):
+    """Singleton model for site-wide settings"""
+    website_name = models.CharField(max_length=200, default='EdithCloths')
+    logo = models.ImageField(upload_to='settings/', blank=True, null=True)
+    homepage_banner = models.ImageField(upload_to='settings/', blank=True, null=True)
+    upi_id = models.CharField(max_length=100, blank=True, default='')
+    qr_code_image = models.ImageField(upload_to='settings/', blank=True, null=True)
+    contact_phone = models.CharField(max_length=20, blank=True, default='')
+    contact_email = models.EmailField(blank=True, default='')
+    contact_address = models.TextField(blank=True, default='')
+    about_text = models.TextField(blank=True, default='')
+    whatsapp_number = models.CharField(max_length=20, blank=True, default='', help_text='WhatsApp number for customer support')
+    instagram_link = models.CharField(max_length=100, blank=True, default='', help_text='Instagram username or profile link')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Site Settings'
+        verbose_name_plural = 'Site Settings'
+
+    def save(self, *args, **kwargs):
+        # Ensure only one instance exists
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Prevent deletion
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, created = cls.objects.get_or_create(pk=1)
+        return obj
+
+    def __str__(self):
+        return 'Site Settings'

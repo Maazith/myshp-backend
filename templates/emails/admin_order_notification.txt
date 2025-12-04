@@ -1,0 +1,33 @@
+EDITHCLOTHS - New Order Payment Confirmation
+
+Hello Admin,
+
+A customer has confirmed payment for a new order. Please review and approve the order.
+
+ORDER DETAILS
+-------------
+Order Number: {{ order_number }}
+Customer Name: {{ customer_name }}
+Customer Email: {{ customer_email }}
+Order Date: {{ order.created_at|date:"F d, Y H:i" }}
+
+ORDER ITEMS
+-----------
+{{ items_text }}
+
+SHIPPING ADDRESS
+----------------
+{{ shipping_address }}
+
+PAYMENT INFORMATION
+-------------------
+Total Amount: ₹{{ total_amount }}
+UPI Reference: {{ upi_reference }}
+{{ payment_proof_text }}
+
+Action Required: Please verify the payment and approve the order in the admin panel.
+
+---
+This is an automated email from EdithCloths Order Management System.
+
+

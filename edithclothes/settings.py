@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import os
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +26,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-9o(%hgr4x$ii_ct2m(hw8=nj7g$06izqws-$_u@%5u795&_to^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -59,7 +61,7 @@ ROOT_URLCONF = 'edithclothes.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -79,10 +81,11 @@ WSGI_APPLICATION = 'edithclothes.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
 }
 
 
@@ -152,8 +155,34 @@ SIMPLE_JWT = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+]
 
 CSRF_TRUSTED_ORIGINS = [
-    'http://localhost',
-    'http://127.0.0.1',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
 ]
+
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'maazith.md@gmail.com'
+EMAIL_HOST_PASSWORD = ''  # Set this in environment variable for security
+DEFAULT_FROM_EMAIL = 'maazith.md@gmail.com'
+ADMIN_EMAIL = 'maazith.md@gmail.com'
+
+# For development: use console backend (emails printed to console)
+# Uncomment this and comment SMTP settings above for testing without email setup
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'

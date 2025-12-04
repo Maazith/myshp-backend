@@ -1,0 +1,16 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{{ site_header|default:_('Django administration') }}</a></h1>
+{% endblock %}
+
+{% block nav-global %}
+<div style="float: right; margin-top: 10px; margin-right: 20px;">
+    <a href="{% url 'admin_dashboard' %}" style="color: #ffd700; text-decoration: none; padding: 8px 15px; border: 1px solid #ffd700; border-radius: 4px;">
+        📊 Store Dashboard
+    </a>
+</div>
+{% endblock %}
+

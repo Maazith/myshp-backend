@@ -1,0 +1,32 @@
+EDITHCLOTHS - Order Placed Successfully!
+
+Dear {{ customer_name }},
+
+Thank you for your order! Your payment has been verified and your order has been successfully placed.
+
+✓ ORDER PLACED
+
+ORDER DETAILS
+-------------
+Order Number: {{ order_number }}
+Order Status: {{ status }}
+Order Date: {{ order.created_at|date:"F d, Y H:i" }}
+
+ORDER ITEMS
+-----------
+{{ items_text }}
+
+SHIPPING ADDRESS
+----------------
+{{ shipping_address }}
+
+Total Amount: ₹{{ total_amount }}
+
+We'll keep you updated on your order status. You can track your order anytime from your account.
+
+Thank you for shopping with EdithCloths!
+
+---
+This is an automated email from EdithCloths. Please do not reply to this email.
+
+

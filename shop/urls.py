@@ -13,9 +13,11 @@ urlpatterns = [
 
     # Products
     path('products/', views.ProductListView.as_view()),
-    path('products/<int:pk>/', views.ProductDetailView.as_view()),
+    path('products/<slug:slug>/', views.ProductDetailView.as_view()),
+    path('products/id/<int:pk>/', views.ProductDetailByIdView.as_view()),  # Support ID lookup
     path('products/add', views.ProductCreateView.as_view()),
     path('products/<int:pk>/edit', views.ProductUpdateView.as_view()),
+    path('products/<int:pk>/delete', views.ProductDeleteView.as_view()),
 
     # Categories
     path('categories/', views.CategoryListView.as_view()),
@@ -42,5 +44,9 @@ urlpatterns = [
     path('orders/', views.AdminOrdersView.as_view()),
     path('orders/<int:pk>/mark-paid', views.AdminMarkPaidView.as_view()),
     path('orders/<int:pk>/status', views.AdminOrderStatusView.as_view()),
+
+    # Site Settings
+    path('settings/', views.SiteSettingsView.as_view()),
+    path('settings/update', views.SiteSettingsUpdateView.as_view()),
 ]
 

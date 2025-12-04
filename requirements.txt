@@ -1,0 +1,14 @@
+Django==4.2.10
+djangorestframework==3.15.1
+django-cors-headers==4.3.1
+djangorestframework-simplejwt==5.3.1
+
+# Database
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# Additional recommended packages
+Pillow==12.0.0           # For image uploads (product images, banners)
+python-dotenv==1.0.1      # If environment variables needed later
+gunicorn==21.2.0          # For production servers like Render
+whitenoise==6.6.0         # For serving static files in productio
