@@ -104,19 +104,29 @@ class LoginView(TokenObtainPairView):
             response = super().post(request, *args, **kwargs)
             if response.status_code == status.HTTP_200_OK:
                 username = request.data.get('username') or request.data.get('email')
-                try:
-                    user = User.objects.get(username=username)
-                    response.data['user'] = UserSerializer(user).data
-                except User.DoesNotExist:
-                    # User doesn't exist - this shouldn't happen if login succeeded
+                if username:
+                    try:
+                        user = User.objects.get(username=username)
+                        response.data['user'] = UserSerializer(user).data
+                    except User.DoesNotExist:
+                        # User doesn't exist - this shouldn't happen if login succeeded
+                        # But handle gracefully
+                        response.data['user'] = None
+                else:
                     response.data['user'] = None
             return response
         except Exception as e:
             # Handle authentication errors more gracefully
+            error_message = 'Invalid username or password. Please check your credentials and try again.'
+            
+            # Log error for debugging (but don't expose to client)
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Login error: {str(e)}")
+            
             return Response(
                 {
-                    'detail': 'Invalid username or password. Please check your credentials and try again.',
-                    'error': str(e)
+                    'detail': error_message
                 },
                 status=status.HTTP_401_UNAUTHORIZED
             )

@@ -44,6 +44,17 @@ urlpatterns = [
     path('api/', include('shop.urls')),
 ]
 
+# Serve media files in production (Render handles static files via WhiteNoise)
+# Media files need to be served separately
+from django.views.static import serve
+from django.urls import re_path
+
+# Serve media files in both development and production
+# In production, Render will serve these files
+urlpatterns += [
+    re_path(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT}),
+]
+
+# Only serve static files in development (WhiteNoise handles in production)
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

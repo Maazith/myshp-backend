@@ -28,7 +28,22 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-9o(%hgr4x$ii_ct2m(hw8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
 
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", ".vercel.app", ".render.com", "myshp-backend.onrender.com", "myshp-frontend.vercel.app"]
+# Production: Only allow specific hosts
+# Development: Allow all (when DEBUG=True)
+if DEBUG:
+    ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
+else:
+    # Production hosts
+    ALLOWED_HOSTS = [
+        "myshp-backend.onrender.com",
+        "*.onrender.com",
+        "myshp-frontend.vercel.app",
+        "*.vercel.app",
+    ]
+    # Allow additional hosts from environment variable
+    additional_hosts = os.environ.get("ALLOWED_HOSTS", "")
+    if additional_hosts:
+        ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(",")])
 
 
 # Application definition
@@ -169,41 +184,73 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://myshp-frontend.vercel.app',
-    'https://myshp-frontend.vercel.app',
-]
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'http://localhost:8000',
-    'http://127.0.0.1:8000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'https://myshp-frontend.vercel.app',
-    'https://*.vercel.app',
-    'https://myshp-backend.onrender.com',
-]
+# Production: Only allow specific origins
+# Development: Allow all origins (when DEBUG=True)
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = True
+    CORS_ALLOWED_ORIGINS = [
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        'http://localhost:8080',
+        'http://127.0.0.1:8080',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://localhost:5500',
+        'http://127.0.0.1:5500',
+    ]
+else:
+    # Production: Only allow Vercel frontend
+    CORS_ALLOW_ALL_ORIGINS = False
+    CORS_ALLOWED_ORIGINS = [
+        'https://myshp-frontend.vercel.app',
+        'https://*.vercel.app',  # Allow all Vercel preview deployments
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        'https://myshp-frontend.vercel.app',
+        'https://*.vercel.app',
+        'https://myshp-backend.onrender.com',
+    ]
+    # Allow additional origins from environment variable
+    additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+    if additional_origins:
+        CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
+        CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
+
+# Security Settings for Production (HTTPS)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    # Development settings
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
 
 # Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587
-EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'maazith.md@gmail.com'
-EMAIL_HOST_PASSWORD = ''  # Set this in environment variable for security
-DEFAULT_FROM_EMAIL = 'maazith.md@gmail.com'
-ADMIN_EMAIL = 'maazith.md@gmail.com'
-
-# For development: use console backend (emails printed to console)
-# Uncomment this and comment SMTP settings above for testing without email setup
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'maazith.md@gmail.com')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', DEFAULT_FROM_EMAIL)
