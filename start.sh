@@ -3,12 +3,32 @@
 
 set -o errexit
 
-# Change to the directory where this script is located (backend directory)
-cd "$(dirname "$0")"
+# Ensure we're in the backend directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
 echo "📁 Current directory: $(pwd)"
 echo "📦 Python version: $(python --version)"
-echo "📦 Django version: $(python -c 'import django; print(django.get_version())')"
+echo "📦 Python path: $(which python)"
+echo "📦 Django version: $(python -c 'import django; print(django.get_version())' 2>/dev/null || echo 'Django not found')"
+
+# Verify manage.py exists
+if [ ! -f "manage.py" ]; then
+    echo "❌ ERROR: manage.py not found in $(pwd)"
+    echo "📂 Listing directory contents:"
+    ls -la
+    exit 1
+fi
+
+# Verify edithclothes module exists
+if [ ! -d "edithclothes" ]; then
+    echo "❌ ERROR: edithclothes module not found in $(pwd)"
+    echo "📂 Listing directory contents:"
+    ls -la
+    exit 1
+fi
+
+echo "✅ Found manage.py and edithclothes module"
 
 echo "🔄 Running database migrations..."
 python manage.py migrate --noinput
@@ -17,5 +37,6 @@ echo "✅ Migrations complete!"
 echo "🚀 Starting Gunicorn..."
 
 # Start Gunicorn - make sure we're using the correct module path
-exec gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120 --chdir .
+echo "📍 Gunicorn command: gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120"
+exec gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 120
 
