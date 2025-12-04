@@ -139,6 +139,7 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
+    BASE_DIR / 'shop' / 'static',  # Shop app static files (admin CSS)
 ]
 
 # WhiteNoise configuration for static files
