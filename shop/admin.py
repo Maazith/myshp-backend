@@ -22,6 +22,11 @@ from .models import (
     SiteSettings,
 )
 
+# Customize admin site
+admin.site.site_header = "EdithCloths Admin"
+admin.site.site_title = "EdithCloths Admin"
+admin.site.index_title = "Welcome to EdithCloths Administration"
+
 
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
