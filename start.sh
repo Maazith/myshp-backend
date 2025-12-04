@@ -34,6 +34,11 @@ echo "🔄 Running database migrations..."
 python manage.py migrate --noinput
 
 echo "✅ Migrations complete!"
+
+# Create superuser from environment variables if provided
+echo "👤 Checking for superuser creation..."
+python manage.py create_superuser_from_env || echo "⚠️  Superuser creation skipped (set DJANGO_SUPERUSER_* env vars to auto-create)"
+
 echo "🚀 Starting Gunicorn..."
 
 # Start Gunicorn - make sure we're using the correct module path

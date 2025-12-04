@@ -17,6 +17,12 @@ services:
           property: connectionString
       - key: EMAIL_HOST_PASSWORD
         sync: false  # Set manually in dashboard
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false  # Set manually: admin username
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false  # Set manually: admin email
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false  # Set manually: admin password (strong password recommended)
     healthCheckPath: /api/products/
 
 databases:
