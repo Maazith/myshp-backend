@@ -139,7 +139,6 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     base_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     hero_media = serializers.FileField(required=False, allow_null=True)
-    hero_media_url = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Product
@@ -153,23 +152,13 @@ class ProductSerializer(serializers.ModelSerializer):
             'base_price',
             'gender',
             'hero_media',
-            'hero_media_url',
             'is_featured',
             'is_active',
             'variants',
             'images',
             'created_at',
         )
-        read_only_fields = ('slug', 'created_at', 'hero_media_url')
-
-    def get_hero_media_url(self, obj):
-        if obj.hero_media and hasattr(obj.hero_media, 'url'):
-            request = self.context.get('request')
-            url = obj.hero_media.url
-            if request:
-                return request.build_absolute_uri(url)
-            return url
-        return None
+        read_only_fields = ('slug', 'created_at')
 
 
 class BannerSerializer(serializers.ModelSerializer):
