@@ -48,6 +48,9 @@ urlpatterns = [
     path('orders/<int:pk>/mark-paid', views.AdminMarkPaidView.as_view()),
     path('orders/<int:pk>/status', views.AdminOrderStatusView.as_view()),
 
+    # Admin bulk delete
+    path('admin/bulk-delete', views.AdminBulkDeleteView.as_view()),
+
     # Site Settings
     path('settings/', views.SiteSettingsView.as_view()),
     path('settings/update', views.SiteSettingsUpdateView.as_view()),
