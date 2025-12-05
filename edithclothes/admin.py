@@ -2,75 +2,67 @@
 Custom Admin Site Configuration
 """
 from django.contrib import admin
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import AuthenticationForm
-from django.template.response import TemplateResponse
+from django.http import HttpResponseRedirect
 from django.urls import path, reverse_lazy
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
+from django.template.response import TemplateResponse
 
 
 class CustomAdminSite(admin.AdminSite):
-    """Custom Admin Site with custom login view"""
+    """Custom Admin Site with custom login view that always provides form"""
     site_header = "EdithCloths Admin"
     site_title = "EdithCloths Admin"
     index_title = "Welcome to EdithCloths Administration"
     
-    def get_urls(self):
-        """Override to add custom login view"""
-        urls = super().get_urls()
-        # Add custom login before default admin URLs
-        custom_urls = [
-            path('login/', self.admin_view(self.login), name='login'),
-        ]
-        return custom_urls + urls
-    
     @never_cache
+    @csrf_protect
     def login(self, request, extra_context=None):
         """
         Display the login form for the given HttpRequest.
+        Always ensures form is available in context.
         """
+        from django.contrib.auth import REDIRECT_FIELD_NAME, login
+        
+        redirect_to = request.POST.get(REDIRECT_FIELD_NAME, request.GET.get(REDIRECT_FIELD_NAME, ''))
+        
+        # If already logged in, redirect
         if request.method == 'GET' and self.has_permission(request):
-            # Already logged in, redirect to admin index
             index_path = reverse_lazy('admin:index', current_app=self.name)
             return HttpResponseRedirect(index_path)
         
-        from django.contrib.auth.forms import AuthenticationForm
-        from django.contrib.auth import REDIRECT_FIELD_NAME
-        from django.urls import reverse
-        from django.http import HttpResponseRedirect
+        # Always create a form - this is the key fix
+        if request.method == 'POST':
+            form = AuthenticationForm(request, data=request.POST)
+            if form.is_valid():
+                # Log the user in
+                login(request, form.get_user())
+                # Redirect to admin index or next URL
+                if redirect_to:
+                    return HttpResponseRedirect(redirect_to)
+                return HttpResponseRedirect(reverse_lazy('admin:index', current_app=self.name))
+        else:
+            # GET request - always create empty form
+            form = AuthenticationForm(request)
         
+        # Build context - ALWAYS include form
         context = {
             **self.each_context(request),
             'title': 'Log in',
             'app_path': request.get_full_path(),
-            'username': request.user.get_username(),
+            'username': request.user.get_username() if request.user.is_authenticated else '',
+            'form': form,  # ALWAYS include form - this is critical
+            REDIRECT_FIELD_NAME: redirect_to,
+            'next': redirect_to,
         }
-        
-        # Always provide a form, even if empty
-        if request.method == 'GET':
-            form = AuthenticationForm(request)
-        else:
-            form = AuthenticationForm(request, data=request.POST)
-            if form.is_valid():
-                from django.contrib.auth import login
-                login(request, form.get_user())
-                return HttpResponseRedirect(self.get_login_redirect_url(request))
-        
-        context['form'] = form
-        context[REDIRECT_FIELD_NAME] = request.GET.get(REDIRECT_FIELD_NAME, '')
         
         if extra_context is not None:
             context.update(extra_context)
         
-        defaults = {
-            'extra_context': context,
-            'current_app': self.name,
-            'authentication_form': form,
-            'template_name': 'admin/login.html',
-        }
         request.current_app = self.name
         
-        return auth_views.LoginView.as_view(**defaults)(request)
+        # Use our custom template - this ensures form is always rendered
+        return TemplateResponse(request, 'admin/login.html', context)
 

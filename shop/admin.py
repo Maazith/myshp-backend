@@ -22,10 +22,9 @@ from .models import (
     SiteSettings,
 )
 
-# Customize admin site
-admin.site.site_header = "EdithCloths Admin"
-admin.site.site_title = "EdithCloths Admin"
-admin.site.index_title = "Welcome to EdithCloths Administration"
+# Note: Admin site customization is now in edithclothes/admin.py (CustomAdminSite)
+# This file uses the default admin.site for model registration
+# The CustomAdminSite will be used via edithclothes/urls.py
 
 
 class ProductVariantInline(admin.TabularInline):
@@ -36,7 +35,6 @@ class ProductVariantInline(admin.TabularInline):
     verbose_name_plural = "Variants (Optional - default variant is auto-created)"
 
 
-@admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('title', 'category', 'gender', 'base_price', 'is_active', 'variant_count')
     list_filter = ('gender', 'category', 'is_active')
@@ -59,13 +57,11 @@ class ProductAdmin(admin.ModelAdmin):
     variant_count.short_description = 'Variants'
 
 
-@admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug', 'created_at')
     prepopulated_fields = {'slug': ('name',)}
 
 
-@admin.register(SiteSettings)
 class SiteSettingsAdmin(admin.ModelAdmin):
     list_display = ('website_name', 'contact_email', 'contact_phone', 'updated_at')
     fieldsets = (
@@ -101,7 +97,6 @@ class CartItemInline(admin.TabularInline):
     extra = 0
 
 
-@admin.register(Cart)
 class CartAdmin(admin.ModelAdmin):
     list_display = ('user', 'total_items', 'total_amount', 'created_at')
     inlines = [CartItemInline]
@@ -113,7 +108,6 @@ class OrderItemInline(admin.TabularInline):
     readonly_fields = ('product_title', 'size', 'color', 'price', 'quantity')
 
 
-@admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     list_display = ('order_number', 'user', 'status', 'total_amount', 'payment_verified', 'created_at')
     list_filter = ('status', 'payment_verified', 'created_at')
@@ -134,11 +128,13 @@ class OrderAdmin(admin.ModelAdmin):
     verify_payment.short_description = "Verify payment for selected orders"
 
 
-admin.site.register(ProductVariant)
-admin.site.register(ProductImage)
-admin.site.register(Banner)
-admin.site.register(OrderItem)
-admin.site.register(PaymentProof)
+# Models are now registered in edithclothes/urls.py with CustomAdminSite
+# Keep these for backward compatibility but they won't be used
+# admin.site.register(ProductVariant)
+# admin.site.register(ProductImage)
+# admin.site.register(Banner)
+# admin.site.register(OrderItem)
+# admin.site.register(PaymentProof)
 
 
 # Custom Admin Dashboard
