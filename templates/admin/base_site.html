@@ -95,50 +95,78 @@ body::after {
     margin-bottom: 1.5rem !important;
 }
 
-.module {
+.module,
+div.module,
+#content .module,
+#content-main .module {
     background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid #E6E6E6 !important;
     border-radius: 16px !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     margin-bottom: 20px !important;
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 
-.module h2, .module h3 {
+.module h2,
+.module h3,
+div.module h2,
+div.module h3,
+#content .module h2,
+#content .module h3 {
     background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     color: #FFFFFF !important;
     border-bottom: 1px solid #E6E6E6 !important;
     padding: 12px 15px !important;
     font-weight: 700 !important;
     margin: 0 !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
-.module ul {
+.module ul,
+div.module ul,
+#content .module ul {
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
+    background: transparent !important;
 }
 
-.module li {
+.module li,
+div.module li,
+#content .module li {
     border-bottom: 1px solid rgba(230, 230, 230, 0.2) !important;
     padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
 }
 
 .module li:last-child {
     border-bottom: none !important;
 }
 
-.module a {
+.module a,
+div.module a,
+#content .module a,
+.module a:link,
+.module a:visited {
     color: #FFFFFF !important;
     padding: 10px 15px !important;
     display: block !important;
     text-decoration: none !important;
     transition: all 0.2s ease !important;
+    background: transparent !important;
 }
 
-.module a:hover {
+.module a:hover,
+div.module a:hover,
+#content .module a:hover {
     background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     color: #FFD700 !important;
     padding-left: 20px !important;
 }
@@ -152,13 +180,17 @@ a:hover {
     color: #FFFFFF !important;
 }
 
-/* Theme Toggle Container */
-.theme-toggle-container {
+/* Theme Toggle Container - Maximum Specificity */
+#theme-toggle-container,
+.theme-toggle-container,
+div.theme-toggle-container,
+div#theme-toggle-container {
     position: fixed !important;
     top: 60px !important;
     right: 20px !important;
     z-index: 1000 !important;
     background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid #E6E6E6 !important;
     border-radius: 16px !important;
     padding: 15px !important;
@@ -166,24 +198,36 @@ a:hover {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     min-width: 200px !important;
+    color: #FFFFFF !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
-.theme-toggle-container h3 {
+#theme-toggle-container h3,
+.theme-toggle-container h3,
+div.theme-toggle-container h3,
+div#theme-toggle-container h3 {
     color: #FFFFFF !important;
     font-size: 0.9rem !important;
     font-weight: 600 !important;
     margin: 0 0 10px 0 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.1em !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
-.theme-options {
+#theme-toggle-container .theme-options,
+.theme-toggle-container .theme-options,
+div.theme-toggle-container .theme-options {
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-.theme-option {
+#theme-toggle-container .theme-option,
+.theme-toggle-container .theme-option,
+div.theme-toggle-container .theme-option {
     display: flex !important;
     align-items: center !important;
     gap: 10px !important;
@@ -192,24 +236,33 @@ a:hover {
     cursor: pointer !important;
     transition: all 0.2s ease !important;
     color: #FFFFFF !important;
+    background: transparent !important;
+    margin: 0 !important;
 }
 
-.theme-option:hover {
+#theme-toggle-container .theme-option:hover,
+.theme-toggle-container .theme-option:hover {
     background: rgba(255, 255, 255, 0.08) !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
-.theme-option input[type="radio"] {
+#theme-toggle-container .theme-option input[type="radio"],
+.theme-toggle-container .theme-option input[type="radio"] {
     margin: 0 !important;
     cursor: pointer !important;
     accent-color: #FFD700 !important;
+    width: auto !important;
+    height: auto !important;
 }
 
-.theme-option label {
+#theme-toggle-container .theme-option label,
+.theme-toggle-container .theme-option label {
     cursor: pointer !important;
     flex: 1 !important;
     font-size: 0.9rem !important;
     margin: 0 !important;
     color: #FFFFFF !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
 /* Tables */
