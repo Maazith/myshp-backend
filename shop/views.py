@@ -42,6 +42,38 @@ def get_user_cart(user):
     return cart
 
 
+def get_or_create_session_user(request):
+    """Get or create an anonymous user for session-based cart"""
+    if request.user.is_authenticated:
+        return request.user
+    
+    # Check if we have a session user ID
+    session_user_id = request.session.get('anonymous_user_id')
+    if session_user_id:
+        try:
+            user = User.objects.get(pk=session_user_id)
+            return user
+        except User.DoesNotExist:
+            pass
+    
+    # Create a new anonymous user
+    username = f'anonymous_{request.session.session_key[:8]}'
+    # Ensure username is unique
+    counter = 1
+    original_username = username
+    while User.objects.filter(username=username).exists():
+        username = f'{original_username}_{counter}'
+        counter += 1
+    
+    user = User.objects.create_user(
+        username=username,
+        email=f'{username}@anonymous.local',
+        is_active=False  # Mark as inactive since it's anonymous
+    )
+    request.session['anonymous_user_id'] = user.id
+    return user
+
+
 class APIRootView(APIView):
     """API root endpoint - shows available endpoints"""
     permission_classes = [permissions.AllowAny]
@@ -625,19 +657,21 @@ class BannerDeleteView(APIView):
 
 
 class CartView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        cart = get_user_cart(request.user)
+        user = get_or_create_session_user(request)
+        cart = get_user_cart(user)
         serializer = CartSerializer(cart, context={'request': request})
         return Response(serializer.data)
 
 
 class CartAddView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        cart = get_user_cart(request.user)
+        user = get_or_create_session_user(request)
+        cart = get_user_cart(user)
         serializer = CartItemSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         variant = serializer.validated_data['variant']
@@ -649,10 +683,11 @@ class CartAddView(APIView):
 
 
 class CartUpdateView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def patch(self, request):
-        cart = get_user_cart(request.user)
+        user = get_or_create_session_user(request)
+        cart = get_user_cart(user)
         item_id = request.data.get('item_id')
         quantity = int(request.data.get('quantity', 1))
         item = get_object_or_404(CartItem, pk=item_id, cart=cart)
@@ -662,10 +697,11 @@ class CartUpdateView(APIView):
 
 
 class CartRemoveView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def delete(self, request, pk):
-        cart = get_user_cart(request.user)
+        user = get_or_create_session_user(request)
+        cart = get_user_cart(user)
         item = get_object_or_404(CartItem, pk=pk, cart=cart)
         item.delete()
         return Response(CartSerializer(cart, context={'request': request}).data)
