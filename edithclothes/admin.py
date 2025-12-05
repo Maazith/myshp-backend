@@ -4,7 +4,7 @@ Custom Admin Site Configuration
 from django.contrib import admin
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.urls import path, reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.template.response import TemplateResponse
@@ -15,6 +15,15 @@ class CustomAdminSite(admin.AdminSite):
     site_header = "EdithCloths Admin"
     site_title = "EdithCloths Admin"
     index_title = "Welcome to EdithCloths Administration"
+    
+    def get_urls(self):
+        """Override to ensure our custom login view is used"""
+        urls = super().get_urls()
+        # Insert our custom login before other URLs
+        custom_urls = [
+            path('login/', self.login, name='login'),
+        ]
+        return custom_urls + urls
     
     @never_cache
     @csrf_protect
@@ -29,7 +38,10 @@ class CustomAdminSite(admin.AdminSite):
         
         # If already logged in, redirect
         if request.method == 'GET' and self.has_permission(request):
-            index_path = reverse('admin:index', current_app=self.name)
+            try:
+                index_path = reverse('admin:index', current_app=self.name)
+            except Exception:
+                index_path = '/edith-admin-login/'
             return HttpResponseRedirect(index_path)
         
         # Always create a form - this is the key fix
@@ -41,7 +53,10 @@ class CustomAdminSite(admin.AdminSite):
                 # Redirect to admin index or next URL
                 if redirect_to:
                     return HttpResponseRedirect(redirect_to)
-                index_path = reverse('admin:index', current_app=self.name)
+                try:
+                    index_path = reverse('admin:index', current_app=self.name)
+                except Exception:
+                    index_path = '/edith-admin-login/'
                 return HttpResponseRedirect(index_path)
         else:
             # GET request - always create empty form
@@ -50,7 +65,7 @@ class CustomAdminSite(admin.AdminSite):
         # Build context - ALWAYS include form
         try:
             base_context = self.each_context(request)
-        except Exception:
+        except Exception as e:
             # Fallback if each_context fails
             base_context = {
                 'site_header': self.site_header,
@@ -76,5 +91,42 @@ class CustomAdminSite(admin.AdminSite):
         request.current_app = self.name
         
         # Use our custom template - this ensures form is always rendered
-        return TemplateResponse(request, 'admin/login.html', context)
+        try:
+            return TemplateResponse(request, 'admin/login.html', context)
+        except Exception as e:
+            # If template fails, return a simple HTML response
+            from django.http import HttpResponse
+            html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Log in | {self.site_title}</title>
+                <style>
+                    body {{ background: #1a1a1a; color: #FFFFFF; font-family: Arial, sans-serif; padding: 2rem; }}
+                    .login-form {{ max-width: 500px; margin: 0 auto; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 16px; }}
+                    input {{ width: 100%; padding: 0.875rem; margin: 0.5rem 0; border-radius: 8px; border: 1px solid #E6E6E6; background: rgba(255,255,255,0.05); color: #FFFFFF; }}
+                    button {{ width: 100%; padding: 1rem; background: #FFD700; color: #000; border: none; border-radius: 16px; font-weight: 600; cursor: pointer; }}
+                </style>
+            </head>
+            <body>
+                <div class="login-form">
+                    <h1>Log in to {self.site_title}</h1>
+                    <form method="post">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{context.get('csrf_token', '')}">
+                        <div>
+                            <label>Username:</label>
+                            <input type="text" name="username" required autofocus>
+                        </div>
+                        <div>
+                            <label>Password:</label>
+                            <input type="password" name="password" required>
+                        </div>
+                        <input type="hidden" name="next" value="{redirect_to}">
+                        <button type="submit">Log in</button>
+                    </form>
+                </div>
+            </body>
+            </html>
+            """
+            return HttpResponse(html)
 
