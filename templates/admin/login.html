@@ -380,28 +380,28 @@ label {
             {% block content %}
 
             <div id="content-main" style="display: block !important; visibility: visible !important; opacity: 1 !important; max-width: 500px !important; margin: 2rem auto !important; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; border-radius: 16px !important; padding: 2.5rem !important; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important; color: #FFFFFF !important;">
-                <form action="{% url 'admin:login' %}" method="post" id="login-form" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important;">{% csrf_token %}
-                    {% if form.username.errors %}
-                    <ul class="errorlist" style="list-style: none !important; padding: 0 !important; margin: 0 0 0.5rem 0 !important;">
+                <form action="{% url 'admin:login' %}" method="post" id="login-form" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; position: relative !important; z-index: 1 !important;">{% csrf_token %}
+                    {% if form and form.username.errors %}
+                    <ul class="errorlist" style="list-style: none !important; padding: 0 !important; margin: 0 0 0.5rem 0 !important; display: block !important; visibility: visible !important;">
                         {% for error in form.username.errors %}
-                        <li style="color: #FF5252 !important; font-size: 0.9rem !important;">{{ error }}</li>
+                        <li style="color: #FF5252 !important; font-size: 0.9rem !important; display: block !important; visibility: visible !important;">{{ error }}</li>
                         {% endfor %}
                     </ul>
                     {% endif %}
-                    <div class="form-row" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important;">
+                    <div class="form-row" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important; position: relative !important; z-index: 1 !important;">
                         <label for="id_username" style="display: block !important; visibility: visible !important; opacity: 1 !important; color: #FFFFFF !important; font-weight: 600 !important; font-size: 0.9rem !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; margin-bottom: 0.5rem !important; font-family: 'Poppins', 'Inter', sans-serif !important;">{% trans 'Username:' %}</label>
-                        <input type="text" name="username" id="id_username" required autofocus style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; box-sizing: border-box !important; background: rgba(255, 255, 255, 0.05) !important; background-color: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; font-size: 1rem !important; font-family: 'Poppins', 'Inter', sans-serif !important;">
+                        <input type="text" name="username" id="id_username" required autofocus style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; box-sizing: border-box !important; background: rgba(255, 255, 255, 0.05) !important; background-color: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; font-size: 1rem !important; font-family: 'Poppins', 'Inter', sans-serif !important; position: relative !important; z-index: 1 !important;">
                     </div>
-                    {% if form.password.errors %}
-                    <ul class="errorlist" style="list-style: none !important; padding: 0 !important; margin: 0 0 0.5rem 0 !important;">
+                    {% if form and form.password.errors %}
+                    <ul class="errorlist" style="list-style: none !important; padding: 0 !important; margin: 0 0 0.5rem 0 !important; display: block !important; visibility: visible !important;">
                         {% for error in form.password.errors %}
-                        <li style="color: #FF5252 !important; font-size: 0.9rem !important;">{{ error }}</li>
+                        <li style="color: #FF5252 !important; font-size: 0.9rem !important; display: block !important; visibility: visible !important;">{{ error }}</li>
                         {% endfor %}
                     </ul>
                     {% endif %}
-                    <div class="form-row" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important;">
+                    <div class="form-row" style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important; position: relative !important; z-index: 1 !important;">
                         <label for="id_password" style="display: block !important; visibility: visible !important; opacity: 1 !important; color: #FFFFFF !important; font-weight: 600 !important; font-size: 0.9rem !important; text-transform: uppercase !important; letter-spacing: 0.1em !important; margin-bottom: 0.5rem !important; font-family: 'Poppins', 'Inter', sans-serif !important;">{% trans 'Password:' %}</label>
-                        <input type="password" name="password" id="id_password" required style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; box-sizing: border-box !important; background: rgba(255, 255, 255, 0.05) !important; background-color: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; font-size: 1rem !important; font-family: 'Poppins', 'Inter', sans-serif !important;">
+                        <input type="password" name="password" id="id_password" required style="display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; box-sizing: border-box !important; background: rgba(255, 255, 255, 0.05) !important; background-color: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; font-size: 1rem !important; font-family: 'Poppins', 'Inter', sans-serif !important; position: relative !important; z-index: 1 !important;">
                         <input type="hidden" name="next" value="{{ next }}">
                     </div>
                     {% url 'admin_password_reset' as password_reset_url %}
