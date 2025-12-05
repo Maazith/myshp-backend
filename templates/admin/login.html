@@ -210,6 +210,54 @@ body.login #changelist-filter {
     display: none !important;
 }
 
+/* Hide theme toggle elements on login page */
+body.login .theme-toggle-container,
+body.login #theme-toggle-container,
+body.login #theme-toggle-btn,
+body.login .nav-global,
+body.login [id*="theme"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Ensure login form is visible */
+body.login #login-form {
+    display: block !important;
+    visibility: visible !important;
+}
+
+body.login #content-main {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* Style content-main properly */
+body.login #content-main {
+    background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    border-radius: 16px !important;
+    padding: 2.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    backdrop-filter: blur(10px) !important;
+    color: #FFFFFF !important;
+}
+
+/* Ensure form elements are visible */
+body.login .form-row {
+    display: block !important;
+    visibility: visible !important;
+}
+
+body.login input[type="text"],
+body.login input[type="password"] {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     body.login #content-main {
