@@ -708,10 +708,11 @@ class CartRemoveView(APIView):
 
 
 class CheckoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        cart = get_user_cart(request.user)
+        user = get_or_create_session_user(request)
+        cart = get_user_cart(user)
         if not cart.items.exists():
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = CheckoutSerializer(data=request.data)
@@ -750,9 +751,10 @@ class CheckoutView(APIView):
 
 
 class ConfirmPaymentView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        user = get_or_create_session_user(request)
         order_id = request.data.get('order')
         if isinstance(order_id, str):
             try:
@@ -760,7 +762,7 @@ class ConfirmPaymentView(APIView):
             except ValueError:
                 return Response({'detail': 'Invalid order ID'}, status=status.HTTP_400_BAD_REQUEST)
         
-        order = get_object_or_404(Order, pk=order_id, user=request.user)
+        order = get_object_or_404(Order, pk=order_id, user=user)
         reference_id = request.data.get('reference_id', '')
         proof_file = request.FILES.get('proof_file')
         notes = request.data.get('notes', '')
@@ -792,10 +794,11 @@ class ConfirmPaymentView(APIView):
 
 
 class MyOrdersView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        user = get_or_create_session_user(request)
+        orders = Order.objects.filter(user=user).order_by('-created_at')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
