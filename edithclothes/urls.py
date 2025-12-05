@@ -20,6 +20,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from shop.admin import dashboard_view
+from edithclothes.admin import CustomAdminSite
+
+# Create custom admin site instance
+admin_site = CustomAdminSite(name='admin')
 
 def root_view(request):
     """Root URL handler - provides API information"""
@@ -39,7 +43,7 @@ def root_view(request):
 urlpatterns = [
     path('', root_view, name='root'),
     path('edith-admin-login/dashboard/', dashboard_view, name='admin_dashboard'),  # Must come before admin.site.urls
-    path('edith-admin-login/', admin.site.urls),
+    path('edith-admin-login/', admin_site.urls),  # Use custom admin site
     path('api/', include('shop.urls')),
 ]
 
