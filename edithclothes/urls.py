@@ -18,12 +18,20 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.forms import AuthenticationForm
+from django.contrib.auth import REDIRECT_FIELD_NAME, login
+from django.views.decorators.cache import never_cache
+from django.views.decorators.csrf import csrf_protect
+from django.middleware.csrf import get_token
+from django.http import HttpResponseRedirect
+from django.urls import reverse
 from shop.admin import dashboard_view
-from edithclothes.admin import CustomAdminSite
 
-# Create custom admin site instance
-admin_site = CustomAdminSite(name='admin')
+# Use default admin site
+admin.site.site_header = "EdithCloths Admin"
+admin.site.site_title = "EdithCloths Admin"
+admin.site.index_title = "Welcome to EdithCloths Administration"
 
 # Register all models with the custom admin site (with error handling)
 try:
@@ -68,10 +76,76 @@ def root_view(request):
         'status': 'online'
     })
 
+# Custom login view that always works
+@never_cache
+@csrf_protect
+def custom_admin_login(request):
+    """Simple admin login view that always returns HTML"""
+    redirect_to = request.POST.get(REDIRECT_FIELD_NAME, request.GET.get(REDIRECT_FIELD_NAME, ''))
+    csrf_token = get_token(request)
+    
+    # If already logged in, redirect
+    if request.method == 'GET' and request.user.is_authenticated and request.user.is_staff:
+        return HttpResponseRedirect('/edith-admin-login/')
+    
+    # Handle POST
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            if redirect_to:
+                return HttpResponseRedirect(redirect_to)
+            return HttpResponseRedirect('/edith-admin-login/')
+    else:
+        form = AuthenticationForm(request)
+    
+    # Always return HTML form
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Log in | EdithCloths Admin</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{ background: #1a1a1a; color: #FFFFFF; font-family: Arial, sans-serif; padding: 2rem; margin: 0; }}
+            .login-form {{ max-width: 500px; margin: 2rem auto; background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 16px; border: 1px solid #E6E6E6; }}
+            h1 {{ margin-top: 0; text-align: center; }}
+            label {{ display: block; margin-bottom: 0.5rem; font-weight: 600; }}
+            input[type="text"], input[type="password"] {{ width: 100%; box-sizing: border-box; padding: 0.875rem 1rem; margin-bottom: 1.5rem; border-radius: 16px; border: 1px solid #E6E6E6; background: rgba(255,255,255,0.05); color: #FFFFFF; font-size: 1rem; }}
+            button {{ width: 100%; padding: 1rem 2rem; background: #FFD700; color: #000; border: none; border-radius: 16px; font-weight: 600; cursor: pointer; font-size: 1rem; }}
+            button:hover {{ opacity: 0.9; }}
+            .error {{ color: #FF5252; margin-bottom: 1rem; }}
+        </style>
+    </head>
+    <body>
+        <div class="login-form">
+            <h1>Log in to EdithCloths Admin</h1>
+            {f'<div class="error">Please enter a correct username and password.</div>' if form.errors else ''}
+            <form method="post" action="">
+                <input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">
+                <div>
+                    <label for="id_username">Username:</label>
+                    <input type="text" name="username" id="id_username" required autofocus>
+                </div>
+                <div>
+                    <label for="id_password">Password:</label>
+                    <input type="password" name="password" id="id_password" required>
+                </div>
+                <input type="hidden" name="next" value="{redirect_to}">
+                <button type="submit">Log in</button>
+            </form>
+        </div>
+    </body>
+    </html>
+    """
+    return HttpResponse(html)
+
 urlpatterns = [
     path('', root_view, name='root'),
-    path('edith-admin-login/dashboard/', dashboard_view, name='admin_dashboard'),  # Must come before admin.site.urls
-    path('edith-admin-login/', admin_site.urls),  # Use custom admin site
+    path('edith-admin-login/dashboard/', dashboard_view, name='admin_dashboard'),
+    path('edith-admin-login/login/', custom_admin_login, name='admin_login'),
+    path('edith-admin-login/', admin.site.urls),  # Use default admin site
     path('api/', include('shop.urls')),
 ]
 
