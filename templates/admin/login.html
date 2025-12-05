@@ -1,0 +1,196 @@
+{% extends "admin/base.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Login Page Specific Styles - Override Django default */
+body.login {
+    background: #1a1a1a !important;
+    position: relative !important;
+    min-height: 100vh !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+body.login::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(230, 230, 230, 0.15);
+    z-index: -2;
+    pointer-events: none;
+}
+
+body.login::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://myshp-frontend.vercel.app/assets/images/logo.jpg');
+    background-position: center center;
+    background-size: 600px auto;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    z-index: -1;
+    pointer-events: none;
+}
+
+#header {
+    background: #000000 !important;
+    border-bottom: 1px solid #E6E6E6 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    padding: 1rem 2rem !important;
+}
+
+#header h1,
+#header h1 a,
+#header h1 a:link,
+#header h1 a:visited {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    font-size: 1.5rem !important;
+    text-decoration: none !important;
+}
+
+#content {
+    background: transparent !important;
+    padding: 3rem 1rem !important;
+}
+
+#content-main {
+    max-width: 500px !important;
+    margin: 0 auto !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    border-radius: 16px !important;
+    padding: 2.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+#login-form {
+    margin-top: 1.5rem !important;
+}
+
+.form-row {
+    margin-bottom: 1.5rem !important;
+}
+
+.form-row label {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+.form-row input[type="text"],
+.form-row input[type="password"] {
+    width: 100% !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    color: #FFFFFF !important;
+    border-radius: 16px !important;
+    padding: 0.875rem 1rem !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+.form-row input[type="text"]:focus,
+.form-row input[type="password"]:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #FFD700 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1) !important;
+}
+
+.submit-row {
+    margin-top: 2rem !important;
+    padding: 0 !important;
+    text-align: center !important;
+}
+
+.submit-row input[type="submit"] {
+    width: 100% !important;
+    background: #FFD700 !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 1rem 2rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+.submit-row input[type="submit"]:hover {
+    background: #FFC700 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+#login-form p {
+    color: #E6E6E6 !important;
+    margin-top: 1rem !important;
+    text-align: center !important;
+}
+
+#login-form a {
+    color: #FFD700 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    transition: color 0.3s ease !important;
+}
+
+#login-form a:hover {
+    color: #FFFFFF !important;
+}
+
+.errorlist {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 1rem 0 !important;
+}
+
+.errorlist li {
+    background: rgba(229, 57, 53, 0.2) !important;
+    border: 1px solid #E53935 !important;
+    color: #FF5252 !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.9rem !important;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #content-main {
+        padding: 2rem 1.5rem !important;
+        margin: 1rem !important;
+    }
+    
+    #header h1 {
+        font-size: 1.2rem !important;
+    }
+}
+</style>
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">EdithCloths Admin</a></h1>
+{% endblock %}
