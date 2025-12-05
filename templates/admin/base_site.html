@@ -302,6 +302,40 @@ a.button:hover,
 #changelist-filter a:hover {
     color: #FFD700 !important;
 }
+
+/* Hide theme toggle completely - MAXIMUM AGGRESSIVE */
+.theme-toggle-container,
+#theme-toggle-container,
+div.theme-toggle-container,
+div#theme-toggle-container,
+[id*="theme-toggle"],
+[class*="theme-toggle"],
+[id*="theme"],
+[class*="theme"],
+.theme-option,
+.theme-options,
+#theme-toggle-btn,
+button[id*="theme"],
+button[class*="theme"],
+body .theme-toggle-container,
+body #theme-toggle-container,
+body div.theme-toggle-container,
+body div#theme-toggle-container {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    pointer-events: none !important;
+    z-index: -9999 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
 </style>
 {% endblock %}
 
@@ -315,13 +349,83 @@ a.button:hover,
         📊 Dashboard
     </a>
 </div>
+<script>
+// Aggressively remove theme toggle elements via JavaScript
+(function() {
+    function removeThemeToggle() {
+        // Remove by ID and class
+        var selectors = [
+            '#theme-toggle-container',
+            '.theme-toggle-container',
+            '#theme-toggle-btn',
+            '[id*="theme-toggle"]',
+            '[class*="theme-toggle"]',
+            '[id*="theme"]',
+            '[class*="theme-option"]'
+        ];
+        
+        selectors.forEach(function(selector) {
+            var elements = document.querySelectorAll(selector);
+            elements.forEach(function(el) {
+                if (el && el.textContent && el.textContent.indexOf('Toggle theme') !== -1) {
+                    el.style.display = 'none';
+                    el.style.visibility = 'hidden';
+                    el.style.opacity = '0';
+                    el.style.height = '0';
+                    el.style.width = '0';
+                    el.style.position = 'absolute';
+                    el.style.left = '-9999px';
+                    if (el.parentNode) {
+                        el.parentNode.removeChild(el);
+                    }
+                }
+            });
+        });
+        
+        // Remove any divs containing "Toggle theme" text
+        var allDivs = document.querySelectorAll('div');
+        for (var i = 0; i < allDivs.length; i++) {
+            if (allDivs[i].textContent && allDivs[i].textContent.indexOf('Toggle theme') !== -1) {
+                allDivs[i].style.display = 'none';
+                allDivs[i].style.visibility = 'hidden';
+                allDivs[i].style.opacity = '0';
+                allDivs[i].style.height = '0';
+                allDivs[i].style.width = '0';
+                if (allDivs[i].parentNode) {
+                    allDivs[i].parentNode.removeChild(allDivs[i]);
+                }
+            }
+        }
+    }
+    
+    // Run immediately
+    removeThemeToggle();
+    
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', removeThemeToggle);
+    }
+    
+    // Run multiple times to catch dynamically added elements
+    setTimeout(removeThemeToggle, 100);
+    setTimeout(removeThemeToggle, 500);
+    setTimeout(removeThemeToggle, 1000);
+    setTimeout(removeThemeToggle, 2000);
+})();
+</script>
 <style>
-/* Force hide theme toggle in nav-global block */
+/* Force hide theme toggle - MAXIMUM SPECIFICITY */
 .nav-global .theme-toggle-container,
 .nav-global #theme-toggle-container,
 .nav-global [id*="theme"],
 .nav-global [class*="theme-toggle"],
-.nav-global button[id*="theme"] {
+.nav-global button[id*="theme"],
+.theme-toggle-container,
+#theme-toggle-container,
+[id*="theme-toggle"],
+[class*="theme-toggle"],
+.theme-option,
+.theme-options {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
