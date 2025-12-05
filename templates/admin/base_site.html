@@ -17,54 +17,274 @@
     --admin-header-bg: #000000;
 }
 
-/* Critical Admin Styles - Inline fallback if CSS file doesn't load */
+/* Critical Admin Styles - Comprehensive inline fallback if CSS file doesn't load */
 body {
     background: #1a1a1a !important;
     color: #FFFFFF !important;
     font-family: 'Poppins', 'Inter', sans-serif !important;
+    min-height: 100vh !important;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(230, 230, 230, 0.15);
+    z-index: -2;
+    pointer-events: none;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://myshp-frontend.vercel.app/assets/images/logo.jpg');
+    background-position: center center;
+    background-size: 600px auto;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    z-index: -1;
+    pointer-events: none;
 }
 
 #header {
     background: #000000 !important;
     border-bottom: 1px solid #E6E6E6 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    padding: 1rem 2rem !important;
 }
 
-#header h1, #header h1 a {
+#header h1, #header h1 a, #header h1 a:link, #header h1 a:visited {
     color: #FFFFFF !important;
     font-weight: 700 !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    font-size: 1.5rem !important;
+    text-decoration: none !important;
+}
+
+#user-tools {
+    color: #FFFFFF !important;
+}
+
+#user-tools a {
+    color: #FFD700 !important;
+}
+
+#user-tools a:hover {
+    color: #FFFFFF !important;
 }
 
 #content {
     background: transparent !important;
     color: #FFFFFF !important;
+    padding: 2rem 1rem !important;
+}
+
+#content h1 {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    font-size: 2rem !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 1.5rem !important;
 }
 
 .module {
     background: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid #E6E6E6 !important;
     border-radius: 16px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    margin-bottom: 20px !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
 }
 
 .module h2, .module h3 {
     background: rgba(255, 255, 255, 0.05) !important;
     color: #FFFFFF !important;
     border-bottom: 1px solid #E6E6E6 !important;
+    padding: 12px 15px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+}
+
+.module ul {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+}
+
+.module li {
+    border-bottom: 1px solid rgba(230, 230, 230, 0.2) !important;
+    padding: 0 !important;
+}
+
+.module li:last-child {
+    border-bottom: none !important;
 }
 
 .module a {
     color: #FFFFFF !important;
+    padding: 10px 15px !important;
+    display: block !important;
+    text-decoration: none !important;
+    transition: all 0.2s ease !important;
 }
 
 .module a:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
     color: #FFD700 !important;
+    padding-left: 20px !important;
 }
 
 a:link, a:visited {
     color: #FFD700 !important;
+    text-decoration: none !important;
 }
 
 a:hover {
     color: #FFFFFF !important;
+}
+
+/* Theme Toggle Container */
+.theme-toggle-container {
+    position: fixed !important;
+    top: 60px !important;
+    right: 20px !important;
+    z-index: 1000 !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    border-radius: 16px !important;
+    padding: 15px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    min-width: 200px !important;
+}
+
+.theme-toggle-container h3 {
+    color: #FFFFFF !important;
+    font-size: 0.9rem !important;
+    font-weight: 600 !important;
+    margin: 0 0 10px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+}
+
+.theme-options {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.theme-option {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    color: #FFFFFF !important;
+}
+
+.theme-option:hover {
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+
+.theme-option input[type="radio"] {
+    margin: 0 !important;
+    cursor: pointer !important;
+    accent-color: #FFD700 !important;
+}
+
+.theme-option label {
+    cursor: pointer !important;
+    flex: 1 !important;
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    color: #FFFFFF !important;
+}
+
+/* Tables */
+table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    color: #FFFFFF !important;
+    background: transparent !important;
+}
+
+table th {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    padding: 12px !important;
+    text-align: left !important;
+    border: 1px solid #E6E6E6 !important;
+    font-weight: 700 !important;
+}
+
+table td {
+    padding: 12px !important;
+    border: 1px solid #E6E6E6 !important;
+    color: #FFFFFF !important;
+    background: transparent !important;
+}
+
+table tr:hover {
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Forms */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    color: #FFFFFF !important;
+    border-radius: 16px !important;
+    padding: 10px 12px !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #FFD700 !important;
+    outline: none !important;
+}
+
+/* Buttons */
+.button,
+input[type="submit"],
+a.button {
+    background: #FFD700 !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+}
+
+.button:hover,
+input[type="submit"]:hover,
+a.button:hover {
+    background: #FFC700 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 </style>
 {% endblock %}
