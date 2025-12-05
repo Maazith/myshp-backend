@@ -28,38 +28,10 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from shop.admin import dashboard_view
 
-# Use default admin site
+# Use default admin site - models are already registered in shop/admin.py
 admin.site.site_header = "EdithCloths Admin"
 admin.site.site_title = "EdithCloths Admin"
 admin.site.index_title = "Welcome to EdithCloths Administration"
-
-# Register all models with the custom admin site (with error handling)
-try:
-    from shop.admin import (
-        ProductAdmin, CategoryAdmin, SiteSettingsAdmin, CartAdmin, OrderAdmin,
-        ProductVariantInline, CartItemInline, OrderItemInline
-    )
-    from shop.models import (
-        Product, Category, SiteSettings, Cart, Order, ProductVariant,
-        ProductImage, Banner, OrderItem, PaymentProof
-    )
-    
-    # Register models with custom admin site
-    admin_site.register(Product, ProductAdmin)
-    admin_site.register(Category, CategoryAdmin)
-    admin_site.register(SiteSettings, SiteSettingsAdmin)
-    admin_site.register(Cart, CartAdmin)
-    admin_site.register(Order, OrderAdmin)
-    admin_site.register(ProductVariant)
-    admin_site.register(ProductImage)
-    admin_site.register(Banner)
-    admin_site.register(OrderItem)
-    admin_site.register(PaymentProof)
-except Exception as e:
-    # If model registration fails, log but don't crash
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.warning(f"Failed to register some models with admin site: {e}")
 
 def root_view(request):
     """Root URL handler - provides API information"""
