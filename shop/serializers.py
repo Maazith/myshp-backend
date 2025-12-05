@@ -267,6 +267,7 @@ class OrderSerializer(serializers.ModelSerializer):
             'status_display',
             'shipping_address',
             'name',
+            'email',
             'phone_number',
             'pin_code',
             'street_name',
@@ -299,6 +300,7 @@ class CheckoutSerializer(serializers.Serializer):
     shipping_address = serializers.CharField(required=False)  # Kept for backward compatibility
     # Separate address fields (all mandatory)
     name = serializers.CharField(required=True, max_length=100)
+    email = serializers.EmailField(required=True)
     phone_number = serializers.CharField(required=True, max_length=20)
     pin_code = serializers.CharField(required=True, max_length=10)
     street_name = serializers.CharField(required=True, max_length=200)

@@ -183,6 +183,7 @@ class Order(TimeStampedModel):
     shipping_address = models.TextField()  # Kept for backward compatibility
     # Separate address fields
     name = models.CharField(max_length=100, blank=True)
+    email = models.EmailField(blank=True, default='')
     phone_number = models.CharField(max_length=20, blank=True)
     pin_code = models.CharField(max_length=10, blank=True)
     street_name = models.CharField(max_length=200, blank=True)

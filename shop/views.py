@@ -756,6 +756,7 @@ class CheckoutView(APIView):
             user=user,
             shipping_address=validated_data.get('shipping_address', full_address),
             name=validated_data['name'],
+            email=validated_data['email'],
             phone_number=validated_data['phone_number'],
             pin_code=validated_data['pin_code'],
             street_name=validated_data['street_name'],
