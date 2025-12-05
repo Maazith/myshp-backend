@@ -5,8 +5,8 @@
 
 {% block extrastyle %}
 {{ block.super }}
-<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
 <style>
 /* Fallback: Ensure theme variables are initialized even if CSS doesn't load */
 :root:not([data-theme]) {
@@ -15,6 +15,56 @@
     --admin-surface: rgba(255, 255, 255, 0.05);
     --admin-border: #E6E6E6;
     --admin-header-bg: #000000;
+}
+
+/* Critical Admin Styles - Inline fallback if CSS file doesn't load */
+body {
+    background: #1a1a1a !important;
+    color: #FFFFFF !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+#header {
+    background: #000000 !important;
+    border-bottom: 1px solid #E6E6E6 !important;
+}
+
+#header h1, #header h1 a {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+}
+
+#content {
+    background: transparent !important;
+    color: #FFFFFF !important;
+}
+
+.module {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    border-radius: 16px !important;
+}
+
+.module h2, .module h3 {
+    background: rgba(255, 255, 255, 0.05) !important;
+    color: #FFFFFF !important;
+    border-bottom: 1px solid #E6E6E6 !important;
+}
+
+.module a {
+    color: #FFFFFF !important;
+}
+
+.module a:hover {
+    color: #FFD700 !important;
+}
+
+a:link, a:visited {
+    color: #FFD700 !important;
+}
+
+a:hover {
+    color: #FFFFFF !important;
 }
 </style>
 {% endblock %}
