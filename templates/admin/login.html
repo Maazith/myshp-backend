@@ -426,5 +426,92 @@ label {
         <!-- END Content -->
         <div id="footer"></div>
     </div>
+<script>
+// Force all form elements to be visible
+(function() {
+    function forceVisibility() {
+        // Force content-main visibility
+        var contentMain = document.getElementById('content-main');
+        if (contentMain) {
+            contentMain.style.display = 'block';
+            contentMain.style.visibility = 'visible';
+            contentMain.style.opacity = '1';
+        }
+        
+        // Force form visibility
+        var loginForm = document.getElementById('login-form');
+        if (loginForm) {
+            loginForm.style.display = 'block';
+            loginForm.style.visibility = 'visible';
+            loginForm.style.opacity = '1';
+        }
+        
+        // Force all form rows visibility
+        var formRows = document.querySelectorAll('.form-row');
+        formRows.forEach(function(row) {
+            row.style.display = 'block';
+            row.style.visibility = 'visible';
+            row.style.opacity = '1';
+        });
+        
+        // Force all labels visibility
+        var labels = document.querySelectorAll('label');
+        labels.forEach(function(label) {
+            label.style.display = 'block';
+            label.style.visibility = 'visible';
+            label.style.opacity = '1';
+            label.style.color = '#FFFFFF';
+        });
+        
+        // Force all inputs visibility
+        var inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+        inputs.forEach(function(input) {
+            input.style.display = 'block';
+            input.style.visibility = 'visible';
+            input.style.opacity = '1';
+            input.style.width = '100%';
+            input.style.background = 'rgba(255, 255, 255, 0.05)';
+            input.style.border = '1px solid #E6E6E6';
+            input.style.color = '#FFFFFF';
+            input.style.padding = '0.875rem 1rem';
+            input.style.borderRadius = '16px';
+        });
+        
+        // Force submit button visibility
+        var submitBtn = document.querySelector('input[type="submit"]');
+        if (submitBtn) {
+            submitBtn.style.display = 'inline-block';
+            submitBtn.style.visibility = 'visible';
+            submitBtn.style.opacity = '1';
+            submitBtn.style.width = '100%';
+            submitBtn.style.background = '#FFD700';
+            submitBtn.style.color = '#000000';
+        }
+        
+        // Force submit-row visibility
+        var submitRow = document.querySelector('.submit-row');
+        if (submitRow) {
+            submitRow.style.display = 'block';
+            submitRow.style.visibility = 'visible';
+            submitRow.style.opacity = '1';
+        }
+    }
+    
+    // Run immediately
+    forceVisibility();
+    
+    // Run on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', forceVisibility);
+    } else {
+        forceVisibility();
+    }
+    
+    // Run multiple times to catch any delays
+    setTimeout(forceVisibility, 100);
+    setTimeout(forceVisibility, 500);
+    setTimeout(forceVisibility, 1000);
+})();
+</script>
 </body>
 </html>
