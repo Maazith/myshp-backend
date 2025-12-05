@@ -421,7 +421,7 @@ label {
         <div id="footer"></div>
     </div>
 <script>
-// Force all form elements to be visible
+// Force all form elements to be visible - Run continuously to handle intermittent issues
 (function() {
     function forceVisibility() {
         // Force content-main visibility
@@ -430,6 +430,13 @@ label {
             contentMain.style.display = 'block';
             contentMain.style.visibility = 'visible';
             contentMain.style.opacity = '1';
+            contentMain.style.maxWidth = '500px';
+            contentMain.style.margin = '2rem auto';
+            contentMain.style.background = 'rgba(255, 255, 255, 0.05)';
+            contentMain.style.border = '1px solid #E6E6E6';
+            contentMain.style.borderRadius = '16px';
+            contentMain.style.padding = '2.5rem';
+            contentMain.style.color = '#FFFFFF';
         }
         
         // Force form visibility
@@ -438,6 +445,46 @@ label {
             loginForm.style.display = 'block';
             loginForm.style.visibility = 'visible';
             loginForm.style.opacity = '1';
+            loginForm.style.width = '100%';
+        } else {
+            // If form doesn't exist, create it
+            if (contentMain && !loginForm) {
+                var form = document.createElement('form');
+                form.id = 'login-form';
+                form.action = '/edith-admin-login/login/';
+                form.method = 'post';
+                form.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important;';
+                
+                // Add CSRF token
+                var csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+                form.appendChild(csrfInput);
+                
+                // Add username field
+                var usernameRow = document.createElement('div');
+                usernameRow.className = 'form-row';
+                usernameRow.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important;';
+                usernameRow.innerHTML = '<label for="id_username" style="display: block !important; color: #FFFFFF !important; font-weight: 600 !important; margin-bottom: 0.5rem !important;">Username:</label><input type="text" name="username" id="id_username" required autofocus style="display: block !important; width: 100% !important; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important;">';
+                form.appendChild(usernameRow);
+                
+                // Add password field
+                var passwordRow = document.createElement('div');
+                passwordRow.className = 'form-row';
+                passwordRow.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; width: 100% !important; margin-bottom: 1.5rem !important;';
+                passwordRow.innerHTML = '<label for="id_password" style="display: block !important; color: #FFFFFF !important; font-weight: 600 !important; margin-bottom: 0.5rem !important;">Password:</label><input type="password" name="password" id="id_password" required style="display: block !important; width: 100% !important; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important;">';
+                form.appendChild(passwordRow);
+                
+                // Add submit button
+                var submitRow = document.createElement('div');
+                submitRow.className = 'submit-row';
+                submitRow.style.cssText = 'display: block !important; visibility: visible !important; opacity: 1 !important; margin-top: 2rem !important; text-align: center !important; width: 100% !important;';
+                submitRow.innerHTML = '<input type="submit" value="Log in" style="display: inline-block !important; width: 100% !important; background: #FFD700 !important; color: #000000 !important; border: none !important; border-radius: 16px !important; padding: 1rem 2rem !important; font-weight: 600 !important; cursor: pointer !important;">';
+                form.appendChild(submitRow);
+                
+                contentMain.appendChild(form);
+            }
         }
         
         // Force all form rows visibility
@@ -446,6 +493,7 @@ label {
             row.style.display = 'block';
             row.style.visibility = 'visible';
             row.style.opacity = '1';
+            row.style.width = '100%';
         });
         
         // Force all labels visibility
@@ -501,10 +549,28 @@ label {
         forceVisibility();
     }
     
-    // Run multiple times to catch any delays
+    // Run multiple times to catch any delays and handle intermittent issues
+    setTimeout(forceVisibility, 50);
     setTimeout(forceVisibility, 100);
+    setTimeout(forceVisibility, 250);
     setTimeout(forceVisibility, 500);
     setTimeout(forceVisibility, 1000);
+    setTimeout(forceVisibility, 2000);
+    
+    // Use MutationObserver to watch for DOM changes
+    if (window.MutationObserver) {
+        var observer = new MutationObserver(function(mutations) {
+            forceVisibility();
+        });
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true
+        });
+    }
+    
+    // Also run on window load
+    window.addEventListener('load', forceVisibility);
 })();
 </script>
 </body>
