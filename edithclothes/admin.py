@@ -103,12 +103,16 @@ class CustomAdminSite(admin.AdminSite):
         
         request.current_app = self.name
         
+        # For now, always use fallback HTML to ensure it works
+        # Once stable, we can try the template again
+        return self._get_fallback_html(csrf_token, redirect_to)
+        
         # Use our custom template - this ensures form is always rendered
-        try:
-            return TemplateResponse(request, 'admin/login.html', context)
-        except Exception as e:
-            # If template fails, return fallback HTML
-            return self._get_fallback_html(csrf_token, redirect_to)
+        # try:
+        #     return TemplateResponse(request, 'admin/login.html', context)
+        # except Exception as e:
+        #     # If template fails, return fallback HTML
+        #     return self._get_fallback_html(csrf_token, redirect_to)
     
     def _get_fallback_html(self, csrf_token, redirect_to):
         """Generate fallback HTML login form"""
