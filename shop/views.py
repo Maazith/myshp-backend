@@ -331,7 +331,11 @@ class ProductDetailByIdView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request, pk):
-        product = get_object_or_404(Product, pk=pk, is_active=True)
+        # Allow admin to see inactive products
+        if request.user.is_staff:
+            product = get_object_or_404(Product, pk=pk)
+        else:
+            product = get_object_or_404(Product, pk=pk, is_active=True)
         serializer = ProductSerializer(product, context={'request': request})
         return Response(serializer.data)
 
