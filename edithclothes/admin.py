@@ -96,30 +96,37 @@ class CustomAdminSite(admin.AdminSite):
         except Exception as e:
             # If template fails, return a simple HTML response
             from django.http import HttpResponse
+            from django.middleware.csrf import get_token
+            csrf_token = get_token(request)
             html = f"""
             <!DOCTYPE html>
             <html>
             <head>
                 <title>Log in | {self.site_title}</title>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <style>
-                    body {{ background: #1a1a1a; color: #FFFFFF; font-family: Arial, sans-serif; padding: 2rem; }}
-                    .login-form {{ max-width: 500px; margin: 0 auto; background: rgba(255,255,255,0.05); padding: 2rem; border-radius: 16px; }}
-                    input {{ width: 100%; padding: 0.875rem; margin: 0.5rem 0; border-radius: 8px; border: 1px solid #E6E6E6; background: rgba(255,255,255,0.05); color: #FFFFFF; }}
-                    button {{ width: 100%; padding: 1rem; background: #FFD700; color: #000; border: none; border-radius: 16px; font-weight: 600; cursor: pointer; }}
+                    body {{ background: #1a1a1a; color: #FFFFFF; font-family: Arial, sans-serif; padding: 2rem; margin: 0; }}
+                    .login-form {{ max-width: 500px; margin: 2rem auto; background: rgba(255,255,255,0.05); padding: 2.5rem; border-radius: 16px; border: 1px solid #E6E6E6; }}
+                    h1 {{ margin-top: 0; text-align: center; }}
+                    label {{ display: block; margin-bottom: 0.5rem; font-weight: 600; }}
+                    input[type="text"], input[type="password"] {{ width: 100%; box-sizing: border-box; padding: 0.875rem 1rem; margin-bottom: 1.5rem; border-radius: 16px; border: 1px solid #E6E6E6; background: rgba(255,255,255,0.05); color: #FFFFFF; font-size: 1rem; }}
+                    button {{ width: 100%; padding: 1rem 2rem; background: #FFD700; color: #000; border: none; border-radius: 16px; font-weight: 600; cursor: pointer; font-size: 1rem; }}
+                    button:hover {{ opacity: 0.9; }}
                 </style>
             </head>
             <body>
                 <div class="login-form">
                     <h1>Log in to {self.site_title}</h1>
-                    <form method="post">
-                        <input type="hidden" name="csrfmiddlewaretoken" value="{context.get('csrf_token', '')}">
+                    <form method="post" action="">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{csrf_token}">
                         <div>
-                            <label>Username:</label>
-                            <input type="text" name="username" required autofocus>
+                            <label for="id_username">Username:</label>
+                            <input type="text" name="username" id="id_username" required autofocus>
                         </div>
                         <div>
-                            <label>Password:</label>
-                            <input type="password" name="password" required>
+                            <label for="id_password">Password:</label>
+                            <input type="password" name="password" id="id_password" required>
                         </div>
                         <input type="hidden" name="next" value="{redirect_to}">
                         <button type="submit">Log in</button>
