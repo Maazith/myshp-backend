@@ -686,6 +686,38 @@ class BannerDeleteView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class AdminBulkDeleteView(APIView):
+    """Bulk delete all products or banners"""
+    permission_classes = [permissions.IsAdminUser]
+
+    def delete(self, request):
+        delete_type = request.data.get('type')  # 'products' or 'banners'
+        
+        if delete_type == 'products':
+            products = Product.objects.all()
+            count = products.count()
+            # Delete all products (cascades will delete variants, images, etc.)
+            products.delete()
+            return Response({
+                'detail': f'Successfully deleted {count} product(s)',
+                'deleted_count': count
+            }, status=status.HTTP_200_OK)
+        
+        elif delete_type == 'banners':
+            banners = Banner.objects.all()
+            count = banners.count()
+            banners.delete()
+            return Response({
+                'detail': f'Successfully deleted {count} banner(s)',
+                'deleted_count': count
+            }, status=status.HTTP_200_OK)
+        
+        else:
+            return Response({
+                'detail': 'Invalid type. Use "products" or "banners"'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
 class CartView(APIView):
     permission_classes = [permissions.AllowAny]
 
