@@ -337,27 +337,34 @@ label {
             {% endfor %}
             {% endif %}
 
-            <div id="content-main">
-                <form action="{% url 'admin:login' %}" method="post" id="login-form">{% csrf_token %}
-                    <div class="form-row">
+            <div id="content-main" style="display: block !important; visibility: visible !important;">
+                {% if form %}
+                <form action="{% url 'admin:login' %}" method="post" id="login-form" style="display: block !important; visibility: visible !important;">{% csrf_token %}
+                    <div class="form-row" style="display: block !important; visibility: visible !important;">
                         {{ form.username.errors }}
-                        {{ form.username.label_tag }} {{ form.username }}
+                        <label for="id_username" style="display: block !important; color: #FFFFFF !important; font-weight: 600 !important; margin-bottom: 0.5rem !important;">{% trans 'Username:' %}</label>
+                        <input type="text" name="username" id="id_username" required style="display: block !important; visibility: visible !important; width: 100% !important; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; margin-bottom: 1.5rem !important;">
                     </div>
-                    <div class="form-row">
+                    <div class="form-row" style="display: block !important; visibility: visible !important;">
                         {{ form.password.errors }}
-                        {{ form.password.label_tag }} {{ form.password }}
+                        <label for="id_password" style="display: block !important; color: #FFFFFF !important; font-weight: 600 !important; margin-bottom: 0.5rem !important;">{% trans 'Password:' %}</label>
+                        <input type="password" name="password" id="id_password" required style="display: block !important; visibility: visible !important; width: 100% !important; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid #E6E6E6 !important; color: #FFFFFF !important; padding: 0.875rem 1rem !important; border-radius: 16px !important; margin-bottom: 1.5rem !important;">
                         <input type="hidden" name="next" value="{{ next }}">
                     </div>
                     {% url 'admin_password_reset' as password_reset_url %}
                     {% if password_reset_url %}
-                    <div class="password-reset-link">
-                        <a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+                    <div class="password-reset-link" style="text-align: center !important; margin-top: 1rem !important;">
+                        <a href="{{ password_reset_url }}" style="color: #FFD700 !important;">{% trans 'Forgotten your password or username?' %}</a>
                     </div>
                     {% endif %}
-                    <div class="submit-row">
-                        <input type="submit" value="{% trans 'Log in' %}">
+                    <div class="submit-row" style="display: block !important; visibility: visible !important; margin-top: 2rem !important; text-align: center !important;">
+                        <input type="submit" value="{% trans 'Log in' %}" style="display: inline-block !important; visibility: visible !important; width: 100% !important; background: #FFD700 !important; color: #000000 !important; border: none !important; border-radius: 16px !important; padding: 1rem 2rem !important; font-weight: 600 !important; font-size: 1rem !important; cursor: pointer !important;">
                     </div>
                 </form>
+                {% else %}
+                <p style="color: #FFFFFF !important;">{% trans 'You are already logged in.' %}</p>
+                <a href="{% url 'admin:index' %}" style="color: #FFD700 !important;">{% trans 'Go to admin' %}</a>
+                {% endif %}
             </div>
             {% endblock %}
         </div>
