@@ -106,3 +106,4 @@ def send_order_confirmation_to_user(order):
         return False
 
 
+
