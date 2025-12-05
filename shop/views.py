@@ -723,7 +723,7 @@ class CheckoutView(APIView):
         full_address = f"{validated_data.get('address', '')}\n{validated_data.get('street_name', '')}\n{validated_data.get('city_town', '')}, {validated_data.get('district', '')} - {validated_data.get('pin_code', '')}"
         
         order = Order.objects.create(
-            user=request.user,
+            user=user,
             shipping_address=validated_data.get('shipping_address', full_address),
             name=validated_data['name'],
             phone_number=validated_data['phone_number'],
