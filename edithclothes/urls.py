@@ -27,20 +27,19 @@ def root_view(request):
         'message': 'EdithCloths Backend API',
         'version': '1.0',
         'endpoints': {
-            'admin': '/admin/',
-            'admin_dashboard': '/admin/dashboard/',
+            'admin': '/edith-admin-login/',
+            'admin_dashboard': '/edith-admin-login/dashboard/',
             'api': '/api/',
             'api_root': '/api/',
             'api_products': '/api/products/',
-            'api_auth': '/api/auth/login, /api/auth/register',
         },
         'status': 'online'
     })
 
 urlpatterns = [
     path('', root_view, name='root'),
-    path('admin/dashboard/', dashboard_view, name='admin_dashboard'),  # Must come before admin.site.urls
-    path('admin/', admin.site.urls),
+    path('edith-admin-login/dashboard/', dashboard_view, name='admin_dashboard'),  # Must come before admin.site.urls
+    path('edith-admin-login/', admin.site.urls),
     path('api/', include('shop.urls')),
 ]
 
