@@ -18,14 +18,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from django.http import JsonResponse, HttpResponse
-from django.contrib.auth.forms import AuthenticationForm
-from django.contrib.auth import REDIRECT_FIELD_NAME, login
-from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import csrf_protect
-from django.middleware.csrf import get_token
-from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.http import JsonResponse
 from shop.admin import dashboard_view
 
 # Use default admin site - models are already registered in shop/admin.py
