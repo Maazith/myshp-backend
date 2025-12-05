@@ -1130,5 +1130,197 @@ textarea:disabled {
     margin: 15px 0 !important;
 }
 
+/* Login Page Specific Styles */
+body.login {
+    background: #1a1a1a !important;
+    position: relative !important;
+    min-height: 100vh !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+body.login::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(230, 230, 230, 0.15);
+    z-index: -2;
+    pointer-events: none;
+}
+
+body.login::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://myshp-frontend.vercel.app/assets/images/logo.jpg');
+    background-position: center center;
+    background-size: 600px auto;
+    background-repeat: no-repeat;
+    opacity: 0.15;
+    z-index: -1;
+    pointer-events: none;
+}
+
+body.login #header {
+    background: #000000 !important;
+    border-bottom: 1px solid #E6E6E6 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    padding: 1rem 2rem !important;
+}
+
+body.login #header h1,
+body.login #header h1 a,
+body.login #header h1 a:link,
+body.login #header h1 a:visited {
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.2em !important;
+    text-transform: uppercase !important;
+    font-size: 1.5rem !important;
+    text-decoration: none !important;
+}
+
+body.login #content {
+    background: transparent !important;
+    padding: 3rem 1rem !important;
+    color: #FFFFFF !important;
+}
+
+body.login #content h1 {
+    color: #FFFFFF !important;
+}
+
+body.login #content-main {
+    max-width: 500px !important;
+    margin: 0 auto !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    border-radius: 16px !important;
+    padding: 2.5rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+body.login #login-form {
+    margin-top: 1.5rem !important;
+}
+
+body.login .form-row {
+    margin-bottom: 1.5rem !important;
+}
+
+body.login .form-row label {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 0.9rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    margin-bottom: 0.5rem !important;
+    display: block !important;
+}
+
+body.login .form-row input[type="text"],
+body.login .form-row input[type="password"],
+body.login .form-row input[type="email"] {
+    width: 100% !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    color: #FFFFFF !important;
+    border-radius: 16px !important;
+    padding: 0.875rem 1rem !important;
+    font-size: 1rem !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+body.login .form-row input[type="text"]:focus,
+body.login .form-row input[type="password"]:focus,
+body.login .form-row input[type="email"]:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: #FFD700 !important;
+    outline: none !important;
+    box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1) !important;
+}
+
+body.login .submit-row {
+    margin-top: 2rem !important;
+    padding: 0 !important;
+    text-align: center !important;
+}
+
+body.login .submit-row input[type="submit"] {
+    width: 100% !important;
+    background: #FFD700 !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 1rem 2rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+body.login .submit-row input[type="submit"]:hover {
+    background: #FFC700 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+body.login #login-form p {
+    color: #E6E6E6 !important;
+    margin-top: 1rem !important;
+    text-align: center !important;
+}
+
+body.login #login-form a {
+    color: #FFD700 !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    transition: color 0.3s ease !important;
+}
+
+body.login #login-form a:hover {
+    color: #FFFFFF !important;
+}
+
+body.login .errorlist {
+    list-style: none !important;
+    padding: 0 !important;
+    margin: 1rem 0 !important;
+}
+
+body.login .errorlist li {
+    background: rgba(229, 57, 53, 0.2) !important;
+    border: 1px solid #E53935 !important;
+    color: #FF5252 !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.9rem !important;
+}
+
+body.login .breadcrumbs {
+    background: transparent !important;
+    color: #FFFFFF !important;
+    border-bottom: none !important;
+}
+
+body.login .breadcrumbs a {
+    color: #FFD700 !important;
+}
+
+body.login #changelist-filter {
+    display: none !important;
+}
+
 /* Mobile Responsive Styles Removed - Admin panel is desktop-only */
 
