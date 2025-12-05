@@ -6,37 +6,42 @@
 <link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-    /* Override admin login styles */
+    /* Override admin login styles - Theme-aware */
     body {
-        background: #000000 !important;
-        color: #FFFFFF !important;
+        background: var(--admin-bg) !important;
+        color: var(--admin-text) !important;
         font-family: 'Poppins', 'Inter', sans-serif !important;
+        transition: background-color 0.3s ease, color 0.3s ease;
     }
     
     #header {
-        background: #000000 !important;
-        border-bottom: 1px solid #E6E6E6 !important;
+        background: var(--admin-header-bg) !important;
+        border-bottom: 1px solid var(--admin-border) !important;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     
     #header h1,
     #header h1 a,
     #header h1 a:link,
     #header h1 a:visited {
-        color: #FFFFFF !important;
+        color: var(--admin-text) !important;
         font-weight: 700 !important;
         letter-spacing: 0.2em !important;
+        transition: color 0.3s ease;
     }
     
     #content {
-        background: #000000 !important;
+        background: var(--admin-bg) !important;
+        transition: background-color 0.3s ease;
     }
     
     #content-main {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid #E6E6E6 !important;
+        background: var(--admin-surface) !important;
+        border: 1px solid var(--admin-border) !important;
         border-radius: 16px !important;
         padding: 30px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 4px 12px var(--admin-shadow-color) !important;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
     }
     
     .form-row {
@@ -44,17 +49,18 @@
     }
     
     .form-row label {
-        color: #FFFFFF !important;
+        color: var(--admin-text) !important;
         font-weight: 600 !important;
         margin-bottom: 8px !important;
         display: block !important;
+        transition: color 0.3s ease;
     }
     
     .form-row input[type="text"],
     .form-row input[type="password"] {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid #E6E6E6 !important;
-        color: #FFFFFF !important;
+        background: var(--admin-surface) !important;
+        border: 1px solid var(--admin-border) !important;
+        color: var(--admin-text) !important;
         border-radius: 16px !important;
         padding: 12px 15px !important;
         width: 100% !important;
@@ -64,7 +70,7 @@
     
     .form-row input[type="text"]:focus,
     .form-row input[type="password"]:focus {
-        background: rgba(255, 255, 255, 0.08) !important;
+        background: var(--admin-surface-hover) !important;
         border-color: #FFD700 !important;
         outline: none !important;
         box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1) !important;
@@ -103,6 +109,15 @@
         margin-bottom: 20px !important;
     }
     
+    .theme-option.active {
+        background: var(--admin-surface-hover) !important;
+        border-left: 3px solid var(--admin-gold) !important;
+    }
+    
+    .theme-option:hover {
+        background: var(--admin-surface-hover) !important;
+    }
+    
     /* Mobile responsive styles removed - Admin panel is desktop-only */
 </style>
 {% endblock %}
@@ -112,4 +127,153 @@
 {% endblock %}
 
 {% block title %}{{ title }} | EdithCloths Admin{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function() {
+    // Theme management
+    const THEME_KEY = 'django_admin_theme';
+    const themeToggleBtn = document.getElementById('theme-toggle-btn-login');
+    const themeContainer = document.getElementById('theme-toggle-container');
+    
+    // Get saved theme or default to 'auto'
+    function getTheme() {
+        return localStorage.getItem(THEME_KEY) || 'auto';
+    }
+    
+    // Set theme
+    function setTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem(THEME_KEY, theme);
+        
+        // Update radio buttons
+        const radio = document.querySelector(`input[value="${theme}"][name="theme-login"]`);
+        if (radio) {
+            radio.checked = true;
+            // Update active state
+            document.querySelectorAll('.theme-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            const option = document.querySelector(`.theme-option[data-theme="${theme}"]`);
+            if (option) {
+                option.classList.add('active');
+            }
+        }
+    }
+    
+    // Initialize theme on page load
+    function initTheme() {
+        const savedTheme = getTheme();
+        setTheme(savedTheme);
+    }
+    
+    // Toggle theme container visibility
+    if (themeToggleBtn && themeContainer) {
+        themeToggleBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const isVisible = themeContainer.style.display !== 'none';
+            themeContainer.style.display = isVisible ? 'none' : 'block';
+        });
+        
+        // Close theme container when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!themeContainer.contains(e.target) && e.target !== themeToggleBtn) {
+                themeContainer.style.display = 'none';
+            }
+        });
+        
+        // Handle theme selection
+        document.querySelectorAll('input[name="theme-login"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                setTheme(this.value);
+                themeContainer.style.display = 'none';
+            });
+        });
+    }
+    
+    // Listen for system theme changes (for auto mode)
+    if (window.matchMedia) {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        mediaQuery.addEventListener('change', function() {
+            if (getTheme() === 'auto') {
+                setTheme('auto');
+            }
+        });
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTheme);
+    } else {
+        initTheme();
+    }
+    
+    // Inject theme toggle into body
+    function injectThemeToggle() {
+        const toggleHTML = `
+            <div style="position: fixed; top: 60px; right: 20px; z-index: 1000;">
+                <div class="theme-toggle-container" id="theme-toggle-container" style="display: none; background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: var(--admin-radius); padding: 15px; box-shadow: 0 4px 12px var(--admin-shadow-color); backdrop-filter: blur(10px); min-width: 200px;">
+                    <h3 style="color: var(--admin-text); font-size: 0.9rem; font-weight: 600; margin: 0 0 10px 0; text-transform: uppercase; letter-spacing: 0.1em;">Toggle theme</h3>
+                    <div class="theme-options" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="theme-option" data-theme="auto" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: var(--admin-text);">
+                            <input type="radio" id="theme-auto-login" name="theme-login" value="auto" checked>
+                            <label for="theme-auto-login" style="cursor: pointer; flex: 1; font-size: 0.9rem; margin: 0;">Auto</label>
+                        </div>
+                        <div class="theme-option" data-theme="light" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: var(--admin-text);">
+                            <input type="radio" id="theme-light-login" name="theme-login" value="light">
+                            <label for="theme-light-login" style="cursor: pointer; flex: 1; font-size: 0.9rem; margin: 0;">Light</label>
+                        </div>
+                        <div class="theme-option" data-theme="dark" style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease; color: var(--admin-text);">
+                            <input type="radio" id="theme-dark-login" name="theme-login" value="dark">
+                            <label for="theme-dark-login" style="cursor: pointer; flex: 1; font-size: 0.9rem; margin: 0;">Dark</label>
+                        </div>
+                    </div>
+                </div>
+                <button id="theme-toggle-btn-login" style="background: var(--admin-surface); border: 1px solid var(--admin-border); color: var(--admin-text); padding: 8px 15px; border-radius: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;" title="Toggle theme">
+                    🎨 Theme
+                </button>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', toggleHTML);
+        
+        // Re-initialize after injection
+        const themeToggleBtn = document.getElementById('theme-toggle-btn-login');
+        const themeContainer = document.getElementById('theme-toggle-container');
+        
+        if (themeToggleBtn && themeContainer) {
+            themeToggleBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isVisible = themeContainer.style.display !== 'none';
+                themeContainer.style.display = isVisible ? 'none' : 'block';
+            });
+            
+            document.addEventListener('click', function(e) {
+                if (!themeContainer.contains(e.target) && e.target !== themeToggleBtn) {
+                    themeContainer.style.display = 'none';
+                }
+            });
+            
+            document.querySelectorAll('input[name="theme-login"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    setTheme(this.value);
+                    themeContainer.style.display = 'none';
+                });
+            });
+        }
+    }
+    
+    // Initialize on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            injectThemeToggle();
+        });
+    } else {
+        initTheme();
+        injectThemeToggle();
+    }
+})();
+</script>
+{% endblock %}
 

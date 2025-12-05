@@ -34,7 +34,10 @@ if DEBUG:
     ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 else:
     # Production hosts - Render uses specific domain format
+    # Also include localhost for local development even when DEBUG=False
     ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1",
         "myshp-backend.onrender.com",
         ".onrender.com",  # Allow all Render subdomains
         "myshp-frontend.vercel.app",
