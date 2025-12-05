@@ -22,8 +22,30 @@ from django.http import JsonResponse
 from shop.admin import dashboard_view
 from edithclothes.admin import CustomAdminSite
 
-# Create custom admin site instance
+# Create custom admin site instance and register all models
 admin_site = CustomAdminSite(name='admin')
+
+# Register all models with the custom admin site
+from shop.admin import (
+    ProductAdmin, CategoryAdmin, SiteSettingsAdmin, CartAdmin, OrderAdmin,
+    ProductVariantInline, CartItemInline, OrderItemInline
+)
+from shop.models import (
+    Product, Category, SiteSettings, Cart, Order, ProductVariant,
+    ProductImage, Banner, OrderItem, PaymentProof
+)
+
+# Register models with custom admin site
+admin_site.register(Product, ProductAdmin)
+admin_site.register(Category, CategoryAdmin)
+admin_site.register(SiteSettings, SiteSettingsAdmin)
+admin_site.register(Cart, CartAdmin)
+admin_site.register(Order, OrderAdmin)
+admin_site.register(ProductVariant)
+admin_site.register(ProductImage)
+admin_site.register(Banner)
+admin_site.register(OrderItem)
+admin_site.register(PaymentProof)
 
 def root_view(request):
     """Root URL handler - provides API information"""
