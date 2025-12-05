@@ -18,6 +18,7 @@ class CustomAdminSite(admin.AdminSite):
     
     def get_urls(self):
         """Override to ensure our custom login view is used"""
+        from django.urls import path
         urls = super().get_urls()
         # Insert our custom login before other URLs
         custom_urls = [
