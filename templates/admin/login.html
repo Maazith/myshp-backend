@@ -10,12 +10,20 @@
 {% block extrastyle %}{% endblock %}
 {% block extrahead %}{% endblock %}
 <style>
-/* Login Page Specific Styles - Override Django default */
-body.login {
+/* Login Page Specific Styles - Override Django default - MAXIMUM PRIORITY */
+* {
+    box-sizing: border-box !important;
+}
+
+html, body, body.login {
     background: #1a1a1a !important;
+    background-color: #1a1a1a !important;
     position: relative !important;
     min-height: 100vh !important;
     font-family: 'Poppins', 'Inter', sans-serif !important;
+    color: #FFFFFF !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 body.login::before {
@@ -76,16 +84,23 @@ body.login #content h1 {
     font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
-body.login #content-main {
+body.login #content-main,
+#content-main,
+div#content-main {
     max-width: 500px !important;
-    margin: 0 auto !important;
+    margin: 2rem auto !important;
     background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     border: 1px solid #E6E6E6 !important;
     border-radius: 16px !important;
     padding: 2.5rem !important;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     backdrop-filter: blur(10px) !important;
+    color: #FFFFFF !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 body.login #login-form {
@@ -210,52 +225,74 @@ body.login #changelist-filter {
     display: none !important;
 }
 
-/* Hide theme toggle elements on login page */
+/* Hide theme toggle elements on login page - MAXIMUM SPECIFICITY */
 body.login .theme-toggle-container,
 body.login #theme-toggle-container,
 body.login #theme-toggle-btn,
 body.login .nav-global,
-body.login [id*="theme"] {
+body.login [id*="theme"],
+.theme-toggle-container,
+#theme-toggle-container,
+#theme-toggle-btn,
+.nav-global,
+[id*="theme"],
+div.theme-toggle-container,
+div#theme-toggle-container {
     display: none !important;
     visibility: hidden !important;
+    opacity: 0 !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    left: -9999px !important;
 }
 
-/* Ensure login form is visible */
-body.login #login-form {
+/* Ensure login form is visible - MAXIMUM SPECIFICITY */
+body.login #login-form,
+#login-form,
+form#login-form {
     display: block !important;
     visibility: visible !important;
-}
-
-body.login #content-main {
-    display: block !important;
-    visibility: visible !important;
-}
-
-/* Style content-main properly */
-body.login #content-main {
-    background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid #E6E6E6 !important;
-    border-radius: 16px !important;
-    padding: 2.5rem !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-    -webkit-backdrop-filter: blur(10px) !important;
-    backdrop-filter: blur(10px) !important;
-    color: #FFFFFF !important;
+    opacity: 1 !important;
+    margin-top: 1.5rem !important;
 }
 
 /* Ensure form elements are visible */
-body.login .form-row {
+body.login .form-row,
+.form-row,
+div.form-row {
     display: block !important;
     visibility: visible !important;
+    margin-bottom: 1.5rem !important;
 }
 
 body.login input[type="text"],
-body.login input[type="password"] {
+body.login input[type="password"],
+input[type="text"],
+input[type="password"],
+input[name="username"],
+input[name="password"] {
     display: block !important;
     visibility: visible !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid #E6E6E6 !important;
+    color: #FFFFFF !important;
+    padding: 0.875rem 1rem !important;
+    border-radius: 16px !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+}
+
+body.login label,
+label {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    display: block !important;
+    margin-bottom: 0.5rem !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
 /* Responsive */
