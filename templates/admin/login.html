@@ -73,10 +73,15 @@ body.login #header h1 a:visited {
     text-decoration: none !important;
 }
 
-body.login #content {
+body.login #content,
+#content,
+div#content {
     background: transparent !important;
     padding: 3rem 1rem !important;
     color: #FFFFFF !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 
 body.login #content h1 {
@@ -251,11 +256,13 @@ div#theme-toggle-container {
 /* Ensure login form is visible - MAXIMUM SPECIFICITY */
 body.login #login-form,
 #login-form,
-form#login-form {
+form#login-form,
+form {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
     margin-top: 1.5rem !important;
+    width: 100% !important;
 }
 
 /* Ensure form elements are visible */
@@ -264,7 +271,21 @@ body.login .form-row,
 div.form-row {
     display: block !important;
     visibility: visible !important;
+    opacity: 1 !important;
     margin-bottom: 1.5rem !important;
+    width: 100% !important;
+}
+
+body.login .form-row label,
+.form-row label,
+label {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
 body.login input[type="text"],
@@ -272,9 +293,12 @@ body.login input[type="password"],
 input[type="text"],
 input[type="password"],
 input[name="username"],
-input[name="password"] {
+input[name="password"],
+input#id_username,
+input#id_password {
     display: block !important;
     visibility: visible !important;
+    opacity: 1 !important;
     width: 100% !important;
     box-sizing: border-box !important;
     background: rgba(255, 255, 255, 0.05) !important;
@@ -283,6 +307,37 @@ input[name="password"] {
     color: #FFFFFF !important;
     padding: 0.875rem 1rem !important;
     border-radius: 16px !important;
+    font-family: 'Poppins', 'Inter', sans-serif !important;
+    font-size: 1rem !important;
+    margin-bottom: 1.5rem !important;
+}
+
+body.login .submit-row,
+.submit-row {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin-top: 2rem !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+body.login .submit-row input[type="submit"],
+.submit-row input[type="submit"],
+input[type="submit"] {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: 100% !important;
+    background: #FFD700 !important;
+    background-color: #FFD700 !important;
+    color: #000000 !important;
+    border: none !important;
+    border-radius: 16px !important;
+    padding: 1rem 2rem !important;
+    font-weight: 600 !important;
+    font-size: 1rem !important;
+    cursor: pointer !important;
     font-family: 'Poppins', 'Inter', sans-serif !important;
 }
 
