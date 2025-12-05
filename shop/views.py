@@ -47,6 +47,10 @@ def get_or_create_session_user(request):
     if request.user.is_authenticated:
         return request.user
     
+    # Ensure session is created
+    if not request.session.session_key:
+        request.session.create()
+    
     # Check if we have a session user ID
     session_user_id = request.session.get('anonymous_user_id')
     if session_user_id:
@@ -54,10 +58,18 @@ def get_or_create_session_user(request):
             user = User.objects.get(pk=session_user_id)
             return user
         except User.DoesNotExist:
+            # Session user was deleted, create a new one
             pass
     
     # Create a new anonymous user
-    username = f'anonymous_{request.session.session_key[:8]}'
+    # Use session key if available, otherwise use timestamp
+    if request.session.session_key:
+        session_key_part = request.session.session_key[:8] if len(request.session.session_key) >= 8 else request.session.session_key
+    else:
+        import time
+        session_key_part = str(int(time.time()))[-8:]
+    
+    username = f'anonymous_{session_key_part}'
     # Ensure username is unique
     counter = 1
     original_username = username
@@ -65,13 +77,27 @@ def get_or_create_session_user(request):
         username = f'{original_username}_{counter}'
         counter += 1
     
-    user = User.objects.create_user(
-        username=username,
-        email=f'{username}@anonymous.local',
-        is_active=False  # Mark as inactive since it's anonymous
-    )
-    request.session['anonymous_user_id'] = user.id
-    return user
+    try:
+        user = User.objects.create_user(
+            username=username,
+            email=f'{username}@anonymous.local',
+            is_active=False  # Mark as inactive since it's anonymous
+        )
+        request.session['anonymous_user_id'] = user.id
+        request.session.save()  # Explicitly save the session
+        return user
+    except Exception as e:
+        # Fallback: try to get or create with a simpler approach
+        import uuid
+        username = f'anonymous_{uuid.uuid4().hex[:8]}'
+        user = User.objects.create_user(
+            username=username,
+            email=f'{username}@anonymous.local',
+            is_active=False
+        )
+        request.session['anonymous_user_id'] = user.id
+        request.session.save()
+        return user
 
 
 class APIRootView(APIView):
