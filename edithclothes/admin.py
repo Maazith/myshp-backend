@@ -2,10 +2,9 @@
 Custom Admin Site Configuration
 """
 from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpResponseRedirect
-from django.urls import path, reverse_lazy
+from django.urls import reverse
 from django.views.decorators.cache import never_cache
 from django.views.decorators.csrf import csrf_protect
 from django.template.response import TemplateResponse
@@ -30,7 +29,7 @@ class CustomAdminSite(admin.AdminSite):
         
         # If already logged in, redirect
         if request.method == 'GET' and self.has_permission(request):
-            index_path = reverse_lazy('admin:index', current_app=self.name)
+            index_path = reverse('admin:index', current_app=self.name)
             return HttpResponseRedirect(index_path)
         
         # Always create a form - this is the key fix
@@ -42,20 +41,33 @@ class CustomAdminSite(admin.AdminSite):
                 # Redirect to admin index or next URL
                 if redirect_to:
                     return HttpResponseRedirect(redirect_to)
-                return HttpResponseRedirect(reverse_lazy('admin:index', current_app=self.name))
+                index_path = reverse('admin:index', current_app=self.name)
+                return HttpResponseRedirect(index_path)
         else:
             # GET request - always create empty form
             form = AuthenticationForm(request)
         
         # Build context - ALWAYS include form
+        try:
+            base_context = self.each_context(request)
+        except Exception:
+            # Fallback if each_context fails
+            base_context = {
+                'site_header': self.site_header,
+                'site_title': self.site_title,
+                'site_url': '/',
+            }
+        
         context = {
-            **self.each_context(request),
+            **base_context,
             'title': 'Log in',
             'app_path': request.get_full_path(),
             'username': request.user.get_username() if request.user.is_authenticated else '',
             'form': form,  # ALWAYS include form - this is critical
             REDIRECT_FIELD_NAME: redirect_to,
             'next': redirect_to,
+            'site_title': self.site_title,
+            'site_header': self.site_header,
         }
         
         if extra_context is not None:
