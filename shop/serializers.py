@@ -219,6 +219,7 @@ class CartSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
+    product_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
@@ -229,10 +230,46 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'color',
             'price',
             'quantity',
+            'product_image_url',
         )
 
     def get_price(self, obj):
         return float(obj.price)
+
+    def get_product_image_url(self, obj):
+        """Get product image from variant or product"""
+        request = self.context.get('request')
+        
+        # Try to get image from variant if it exists
+        if obj.variant:
+            # Try variant-specific images first
+            variant_images = obj.variant.images.all()
+            if variant_images.exists():
+                first_image = variant_images.first()
+                if first_image.image and hasattr(first_image.image, 'url'):
+                    url = first_image.image.url
+                    if request:
+                        return request.build_absolute_uri(url)
+                    return url
+            
+            # Try product hero image
+            if obj.variant.product.hero_media and hasattr(obj.variant.product.hero_media, 'url'):
+                url = obj.variant.product.hero_media.url
+                if request:
+                    return request.build_absolute_uri(url)
+                return url
+            
+            # Try product images (not linked to specific variant)
+            product_images = obj.variant.product.images.filter(variant__isnull=True)
+            if product_images.exists():
+                first_image = product_images.first()
+                if first_image.image and hasattr(first_image.image, 'url'):
+                    url = first_image.image.url
+                    if request:
+                        return request.build_absolute_uri(url)
+                    return url
+        
+        return None
 
 
 class PaymentProofSerializer(serializers.ModelSerializer):
