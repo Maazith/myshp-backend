@@ -7,6 +7,16 @@
 {{ block.super }}
 <link rel="stylesheet" type="text/css" href="{% static 'admin/css/custom_admin.css' %}">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Fallback: Ensure theme variables are initialized even if CSS doesn't load */
+:root:not([data-theme]) {
+    --admin-bg: #1a1a1a;
+    --admin-text: #FFFFFF;
+    --admin-surface: rgba(255, 255, 255, 0.05);
+    --admin-border: #E6E6E6;
+    --admin-header-bg: #000000;
+}
+</style>
 {% endblock %}
 
 {% block branding %}

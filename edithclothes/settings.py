@@ -160,6 +160,12 @@ STATICFILES_DIRS = [
     BASE_DIR / 'shop' / 'static',  # Shop app static files (admin CSS)
 ]
 
+# Ensure static files finders include app directories
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
 # WhiteNoise configuration for static files
 # Use CompressedStaticFilesStorage (more reliable than ManifestStorage)
 # ManifestStorage can cause issues if manifest.json is missing or corrupted
