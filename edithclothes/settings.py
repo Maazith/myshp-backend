@@ -38,7 +38,7 @@ else:
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
-        "myshp-backend.onrender.com",
+        "api.edithcloths.com",
         ".onrender.com",  # Allow all Render subdomains
         "myshp-frontend.vercel.app",
         ".vercel.app",  # Allow all Vercel subdomains
@@ -209,6 +209,29 @@ SIMPLE_JWT = {
 # CORS Configuration
 CORS_ALLOW_CREDENTIALS = True
 
+# Allowed HTTP methods
+CORS_ALLOW_METHODS = [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+]
+
+# Allowed headers (including Authorization and Content-Type for JSON)
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
 # Production: Only allow specific origins
 # Development: Allow all origins (when DEBUG=True)
 if DEBUG:
@@ -230,11 +253,12 @@ if DEBUG:
         'http://127.0.0.1:5500',
     ]
 else:
-    # Production: Only allow Vercel frontend
+    # Production: Allow frontend domains and backend domain
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
-        'https://myshp-frontend.vercel.app',
-        'https://myshp-backend.onrender.com',  # Backend can also be an origin
+        'https://edithcloths.com',
+        'https://www.edithcloths.com',
+        'https://api.edithcloths.com',  # Backend can also be an origin
     ]
     # Allow additional origins from environment variable
     additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
@@ -242,10 +266,11 @@ else:
         CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
     
     CSRF_TRUSTED_ORIGINS = [
-        'https://myshp-frontend.vercel.app',
-        'https://.vercel.app',  # Correct wildcard syntax for Django
-        'https://myshp-backend.onrender.com',
-        'https://.onrender.com',  # Correct wildcard syntax for Django
+        'https://edithcloths.com',
+        'https://www.edithcloths.com',
+        'https://api.edithcloths.com',
+        'https://.vercel.app',  # Allow all Vercel subdomains (for fallback)
+        'https://.onrender.com',  # Allow all Render subdomains (for fallback)
     ]
     # Allow additional CSRF origins from environment variable
     additional_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
