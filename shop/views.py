@@ -1058,23 +1058,28 @@ def user_login_view(request):
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             
+            # Get frontend URL from settings
+            from django.conf import settings
+            frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            
             # If redirecting to frontend (checkout.html or any .html), include tokens in URL
-            if next_url:
-                # Check if it's a frontend URL (contains .html or is a full URL)
+            if next_url and next_url != '/':
+                # Check if it's a full frontend URL
                 if '.html' in next_url or next_url.startswith('http'):
                     # Add tokens as URL parameters
                     separator = '&' if '?' in next_url else '?'
                     redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
-                # If it's a relative path that might be frontend, try to construct full URL
-                elif next_url.startswith('/') and 'checkout' in next_url:
-                    # Assume frontend is on same domain or construct from request
-                    # For now, just redirect with tokens in session (will be handled by frontend)
-                    request.session['jwt_access_token'] = access_token
-                    request.session['jwt_refresh_token'] = refresh_token
-                    return redirect(next_url)
+                # Check if it's a relative path that should go to frontend
+                elif next_url.startswith('/') and ('.html' in next_url or 'cart' in next_url.lower() or 'checkout' in next_url.lower() or 'product' in next_url.lower()):
+                    # Construct full frontend URL
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
             
-            return redirect('/')
+            # Default: redirect to frontend homepage with tokens
+            redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
+            return redirect(redirect_url)
         else:
             messages.error(request, 'Invalid username or password. Please try again.')
     
@@ -1161,18 +1166,27 @@ def user_signup_view(request):
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             
+            # Get frontend URL from settings
+            from django.conf import settings
+            frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            
             # If redirecting to frontend, include tokens in URL
-            if next_url:
+            if next_url and next_url != '/':
+                # Check if it's a full frontend URL
                 if '.html' in next_url or next_url.startswith('http'):
                     separator = '&' if '?' in next_url else '?'
                     redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
-                elif next_url.startswith('/') and 'checkout' in next_url:
-                    request.session['jwt_access_token'] = access_token
-                    request.session['jwt_refresh_token'] = refresh_token
-                    return redirect(next_url)
+                # Check if it's a relative path that should go to frontend
+                elif next_url.startswith('/') and ('.html' in next_url or 'cart' in next_url.lower() or 'checkout' in next_url.lower() or 'product' in next_url.lower()):
+                    # Construct full frontend URL
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
             
-            return redirect('/')
+            # Default: redirect to frontend homepage with tokens
+            redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
+            return redirect(redirect_url)
         except Exception as e:
             messages.error(request, f'Error creating account: {str(e)}')
     
