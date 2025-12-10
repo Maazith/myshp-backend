@@ -306,6 +306,14 @@ else:
     if additional_origins:
         CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
     
+    # For Vercel preview deployments, we need to allow all .vercel.app subdomains
+    # Since django-cors-headers doesn't support wildcards, we'll use a custom middleware approach
+    # But first, let's add common Vercel patterns
+    # Note: In production, Vercel will set VERCEL_URL environment variable
+    vercel_url = os.environ.get("VERCEL_URL", "")
+    if vercel_url and vercel_url not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(f"https://{vercel_url}")
+    
     CSRF_TRUSTED_ORIGINS = [
         'https://edithcloths.com',
         'https://www.edithcloths.com',
