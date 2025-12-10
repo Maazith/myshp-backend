@@ -26,7 +26,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-9o(%hgr4x$ii_ct2m(hw8=nj7g$06izqws-$_u@%5u795&_to^")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+# Auto-detect production environment
+IS_RENDER = os.environ.get("RENDER", "").lower() == "true"
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "").lower() == "production" or IS_RENDER
+
+# DEBUG should be False in production, True in development
+DEBUG = os.environ.get("DEBUG", "False" if IS_PRODUCTION else "True").lower() == "true"
 
 # Production: Only allow specific hosts
 # Development: Allow all (when DEBUG=True)
@@ -34,15 +39,23 @@ if DEBUG:
     ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 else:
     # Production hosts - Render uses specific domain format
-    # Also include localhost for local development even when DEBUG=False
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
         "api.edithcloths.com",
-        ".onrender.com",  # Allow all Render subdomains
+        ".onrender.com",  # Allow all Render subdomains (e.g., myshp-backend.onrender.com)
         "myshp-frontend.vercel.app",
         ".vercel.app",  # Allow all Vercel subdomains
+        "edithcloths.com",
+        "www.edithcloths.com",
     ]
+    
+    # Dynamically add Render service URL if on Render
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "")
+        if render_service_name:
+            ALLOWED_HOSTS.append(f"{render_service_name}.onrender.com")
+    
     # Allow additional hosts from environment variable
     additional_hosts = os.environ.get("ALLOWED_HOSTS", "")
     if additional_hosts:
@@ -102,13 +115,20 @@ WSGI_APPLICATION = 'edithclothes.wsgi.application'
 # Use PostgreSQL if DATABASE_URL is set (production), otherwise SQLite (local development)
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
+    # Parse DATABASE_URL for Render PostgreSQL
     DATABASES = {
         'default': dj_database_url.config(
             default=DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True,
+            conn_health_checks=True,
+            ssl_require=True if IS_PRODUCTION else False,
         )
     }
+    # Ensure PostgreSQL-specific settings
+    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+        DATABASES['default']['OPTIONS'] = {
+            'connect_timeout': 10,
+        }
 else:
     # Fallback to SQLite for local development
     DATABASES = {
@@ -174,12 +194,19 @@ if not DEBUG:
 else:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
+# Media files configuration
+# Note: Render's filesystem is temporary, so media files will be lost on redeploy
+# For production, consider using cloud storage (S3, Cloudinary, etc.)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Ensure media directory exists (prevent errors on first deployment)
 try:
     MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+    # Create subdirectories
+    (MEDIA_ROOT / 'products').mkdir(parents=True, exist_ok=True)
+    (MEDIA_ROOT / 'banners').mkdir(parents=True, exist_ok=True)
+    (MEDIA_ROOT / 'payments').mkdir(parents=True, exist_ok=True)
 except (OSError, PermissionError):
     # If we can't create media directory, continue anyway
     # This prevents errors on first deployment
@@ -260,7 +287,20 @@ else:
         'https://edithcloths.com',
         'https://www.edithcloths.com',
         'https://api.edithcloths.com',  # Backend can also be an origin
+        'https://myshp-frontend.vercel.app',  # Vercel frontend
+        'https://myshp-backend.onrender.com',  # Render backend
     ]
+    
+    # Add Vercel frontend URL from environment if set
+    vercel_frontend = os.environ.get("VERCEL_FRONTEND_URL", "")
+    if vercel_frontend:
+        CORS_ALLOWED_ORIGINS.append(vercel_frontend)
+    
+    # Add Render backend URL dynamically
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        CORS_ALLOWED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
+    
     # Allow additional origins from environment variable
     additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
     if additional_origins:
@@ -270,9 +310,21 @@ else:
         'https://edithcloths.com',
         'https://www.edithcloths.com',
         'https://api.edithcloths.com',
+        'https://myshp-frontend.vercel.app',  # Vercel frontend
+        'https://myshp-backend.onrender.com',  # Render backend
         'https://.vercel.app',  # Allow all Vercel subdomains (for fallback)
         'https://.onrender.com',  # Allow all Render subdomains (for fallback)
     ]
+    
+    # Add Vercel frontend URL to CSRF trusted origins
+    if vercel_frontend:
+        CSRF_TRUSTED_ORIGINS.append(vercel_frontend)
+    
+    # Add Render backend URL to CSRF trusted origins
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        CSRF_TRUSTED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
+    
     # Allow additional CSRF origins from environment variable
     additional_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
     if additional_csrf_origins:
