@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db.models import Q
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.contrib import messages
 import json
 from rest_framework import permissions, status
@@ -1010,6 +1011,7 @@ class AdminUsersView(APIView):
 
 # User Authentication Views (Template-based)
 @require_http_methods(["GET", "POST"])
+@ensure_csrf_cookie  # Ensure CSRF cookie is set for GET requests
 def user_login_view(request):
     """User login page"""
     if request.user.is_authenticated:
@@ -1088,6 +1090,7 @@ def user_login_view(request):
 
 
 @require_http_methods(["GET", "POST"])
+@ensure_csrf_cookie  # Ensure CSRF cookie is set for GET requests
 def user_signup_view(request):
     """User signup page"""
     if request.user.is_authenticated:

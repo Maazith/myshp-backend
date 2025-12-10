@@ -417,12 +417,16 @@ SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-origin requests (needed for Verc
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days
 SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to keep it alive
 
+# CSRF settings for cross-origin support
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token (needed for some frontend frameworks)
+CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin CSRF in production
+CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS if 'CSRF_TRUSTED_ORIGINS' in locals() else []
+
 if not DEBUG:
     # Disable SSL redirect - Render handles HTTPS at load balancer
     SECURE_SSL_REDIRECT = False  # Render handles HTTPS, don't force redirect
     SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS (required when SameSite=None)
     CSRF_COOKIE_SECURE = True  # Secure CSRF tokens
-    CSRF_COOKIE_SAMESITE = 'None'  # Allow cross-origin CSRF
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
