@@ -919,12 +919,20 @@ class ConfirmPaymentView(APIView):
 
 
 class MyOrdersView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        user = get_or_create_session_user(request)
-        orders = Order.objects.filter(user=user).order_by('-created_at')
-        serializer = OrderSerializer(orders, many=True)
+        # Use authenticated user, not session user
+        # This ensures orders are linked to the logged-in user account
+        if not request.user.is_authenticated or not request.user.is_active:
+            return Response(
+                {'detail': 'Authentication required. Please log in to view your orders.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Filter orders by the authenticated user
+        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        serializer = OrderSerializer(orders, many=True, context={'request': request})
         return Response(serializer.data)
 
 
