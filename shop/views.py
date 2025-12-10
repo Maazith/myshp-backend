@@ -390,7 +390,7 @@ class ProductCreateView(APIView):
             
             if not request.data.get('category_id'):
                 return Response(
-                    {'detail': 'Category is required'},
+                    {'detail': 'Invalid request data'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             

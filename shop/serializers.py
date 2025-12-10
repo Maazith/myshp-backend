@@ -133,7 +133,7 @@ class ProductColorVariantSerializer(serializers.Serializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category', write_only=True, required=True
+        queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
     )
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
