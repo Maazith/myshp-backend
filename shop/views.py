@@ -977,6 +977,16 @@ class AdminOrderStatusView(APIView):
         order.status = status_value
         order.save()
         return Response(OrderSerializer(order).data)
+    
+    def patch(self, request, pk):
+        """Support PATCH method for order status updates"""
+        status_value = request.data.get('status')
+        if status_value not in dict(Order.STATUS_CHOICES):
+            return Response({'detail': 'Invalid status'}, status=status.HTTP_400_BAD_REQUEST)
+        order = get_object_or_404(Order, pk=pk)
+        order.status = status_value
+        order.save()
+        return Response(OrderSerializer(order).data)
 
 
 class SiteSettingsView(APIView):
