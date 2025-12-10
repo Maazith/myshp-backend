@@ -1,12 +1,19 @@
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 from django.db.models import Q
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
+from django.contrib import messages
 import json
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.decorators import api_view, permission_classes
 
 from .models import (
     Category,
@@ -770,10 +777,42 @@ class CartRemoveView(APIView):
 
 
 class CheckoutView(APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        user = get_or_create_session_user(request)
+        # User must be authenticated (not anonymous)
+        if not request.user.is_authenticated or not request.user.is_active:
+            return Response(
+                {'detail': 'Authentication required. Please log in to checkout.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Transfer cart from anonymous user if exists
+        anonymous_user_id = request.session.get('anonymous_user_id')
+        if anonymous_user_id:
+            try:
+                anonymous_user = User.objects.get(pk=anonymous_user_id, is_active=False)
+                anonymous_cart = get_user_cart(anonymous_user)
+                user_cart = get_user_cart(request.user)
+                
+                # Transfer cart items from anonymous to authenticated user
+                for item in anonymous_cart.items.all():
+                    existing_item = user_cart.items.filter(variant=item.variant).first()
+                    if existing_item:
+                        existing_item.quantity += item.quantity
+                        existing_item.save()
+                    else:
+                        item.cart = user_cart
+                        item.save()
+                
+                # Clear anonymous cart
+                anonymous_cart.items.all().delete()
+                # Remove anonymous user ID from session
+                del request.session['anonymous_user_id']
+            except User.DoesNotExist:
+                pass
+        
+        user = request.user
         cart = get_user_cart(user)
         if not cart.items.exists():
             return Response({'detail': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
@@ -925,3 +964,183 @@ class SiteSettingsUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+# User Authentication Views (Template-based)
+@require_http_methods(["GET", "POST"])
+def user_login_view(request):
+    """User login page"""
+    if request.user.is_authenticated:
+        # Redirect to checkout if coming from checkout, otherwise home
+        next_url = request.GET.get('next', '/')
+        return redirect(next_url)
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        next_url = request.POST.get('next', request.GET.get('next', '/'))
+        
+        if not username or not password:
+            messages.error(request, 'Please enter both username and password.')
+            return render(request, 'shop/login.html', {'next': next_url})
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            
+            # Transfer cart from anonymous user if exists
+            anonymous_user_id = request.session.get('anonymous_user_id')
+            if anonymous_user_id:
+                try:
+                    anonymous_user = User.objects.get(pk=anonymous_user_id, is_active=False)
+                    anonymous_cart = get_user_cart(anonymous_user)
+                    user_cart = get_user_cart(user)
+                    
+                    # Transfer cart items
+                    for item in anonymous_cart.items.all():
+                        existing_item = user_cart.items.filter(variant=item.variant).first()
+                        if existing_item:
+                            existing_item.quantity += item.quantity
+                            existing_item.save()
+                        else:
+                            item.cart = user_cart
+                            item.save()
+                    
+                    anonymous_cart.items.all().delete()
+                    del request.session['anonymous_user_id']
+                except User.DoesNotExist:
+                    pass
+            
+            # Generate JWT tokens for frontend API calls
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            # If redirecting to frontend (checkout.html or any .html), include tokens in URL
+            if next_url:
+                # Check if it's a frontend URL (contains .html or is a full URL)
+                if '.html' in next_url or next_url.startswith('http'):
+                    # Add tokens as URL parameters
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+                # If it's a relative path that might be frontend, try to construct full URL
+                elif next_url.startswith('/') and 'checkout' in next_url:
+                    # Assume frontend is on same domain or construct from request
+                    # For now, just redirect with tokens in session (will be handled by frontend)
+                    request.session['jwt_access_token'] = access_token
+                    request.session['jwt_refresh_token'] = refresh_token
+                    return redirect(next_url)
+            
+            return redirect('/')
+        else:
+            messages.error(request, 'Invalid username or password. Please try again.')
+    
+    next_url = request.GET.get('next', '/')
+    return render(request, 'shop/login.html', {'next': next_url})
+
+
+@require_http_methods(["GET", "POST"])
+def user_signup_view(request):
+    """User signup page"""
+    if request.user.is_authenticated:
+        return redirect('/')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        next_url = request.POST.get('next', request.GET.get('next', '/'))
+        
+        # Validation
+        errors = []
+        if not username:
+            errors.append('Username is required.')
+        elif len(username) < 3:
+            errors.append('Username must be at least 3 characters long.')
+        elif User.objects.filter(username=username).exists():
+            errors.append('Username already exists. Please choose another.')
+        
+        if not email:
+            errors.append('Email is required.')
+        elif User.objects.filter(email__iexact=email).exists():
+            errors.append('An account with this email already exists. Please log in instead.')
+        
+        if not password:
+            errors.append('Password is required.')
+        elif len(password) < 6:
+            errors.append('Password must be at least 6 characters long.')
+        
+        if password != password_confirm:
+            errors.append('Passwords do not match.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, 'shop/signup.html', {'next': next_url})
+        
+        # Create user
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            login(request, user)
+            
+            # Transfer cart from anonymous user if exists
+            anonymous_user_id = request.session.get('anonymous_user_id')
+            if anonymous_user_id:
+                try:
+                    anonymous_user = User.objects.get(pk=anonymous_user_id, is_active=False)
+                    anonymous_cart = get_user_cart(anonymous_user)
+                    user_cart = get_user_cart(user)
+                    
+                    # Transfer cart items
+                    for item in anonymous_cart.items.all():
+                        existing_item = user_cart.items.filter(variant=item.variant).first()
+                        if existing_item:
+                            existing_item.quantity += item.quantity
+                            existing_item.save()
+                        else:
+                            item.cart = user_cart
+                            item.save()
+                    
+                    anonymous_cart.items.all().delete()
+                    del request.session['anonymous_user_id']
+                except User.DoesNotExist:
+                    pass
+            
+            messages.success(request, 'Account created successfully!')
+            
+            # Generate JWT tokens for frontend API calls
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            # If redirecting to frontend, include tokens in URL
+            if next_url:
+                if '.html' in next_url or next_url.startswith('http'):
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+                elif next_url.startswith('/') and 'checkout' in next_url:
+                    request.session['jwt_access_token'] = access_token
+                    request.session['jwt_refresh_token'] = refresh_token
+                    return redirect(next_url)
+            
+            return redirect('/')
+        except Exception as e:
+            messages.error(request, f'Error creating account: {str(e)}')
+    
+    next_url = request.GET.get('next', '/')
+    return render(request, 'shop/signup.html', {'next': next_url})
+
+
+@login_required
+def user_logout_view(request):
+    """User logout"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('/')
