@@ -988,6 +988,16 @@ class SiteSettingsUpdateView(APIView):
         return Response(serializer.data)
 
 
+class AdminUsersView(APIView):
+    """View all registered users - Admin only"""
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.all().order_by('-date_joined')
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data)
+
+
 # User Authentication Views (Template-based)
 @require_http_methods(["GET", "POST"])
 def user_login_view(request):

@@ -54,5 +54,8 @@ urlpatterns = [
     # Site Settings
     path('settings/', views.SiteSettingsView.as_view()),
     path('settings/update', views.SiteSettingsUpdateView.as_view()),
+
+    # Admin Users
+    path('users/', views.AdminUsersView.as_view()),
 ]
 
