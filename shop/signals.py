@@ -6,9 +6,9 @@ from django.dispatch import receiver
 @receiver(post_migrate)
 def create_default_superuser(sender, **kwargs):
     """Auto-create superuser after migrations"""
-    username = 'Maazith'
-    email = 'maazith.md@gmail.com'
-    password = 'maazith2005'
+    username = 'Edithcloths'
+    email = 'edith0530s@gmail.com'
+    password = 'edithcloths0530@2025./'
     
     if not User.objects.filter(username=username).exists():
         User.objects.create_superuser(
@@ -16,5 +16,13 @@ def create_default_superuser(sender, **kwargs):
             email=email,
             password=password
         )
-        print(f"✓ Created superuser: {username}")
+        print(f"[OK] Created superuser: {username}")
+    else:
+        # Update existing superuser password if username matches
+        user = User.objects.filter(username=username).first()
+        if user and user.is_superuser:
+            user.set_password(password)
+            user.email = email
+            user.save()
+            print(f"[OK] Updated superuser password: {username}")
 

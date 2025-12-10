@@ -34,11 +34,11 @@ services:
         sync: false  # Set manually in dashboard
       # Admin user creation
       - key: DJANGO_SUPERUSER_USERNAME
-        sync: false  # Set manually: admin username
+        value: Edithcloths
       - key: DJANGO_SUPERUSER_EMAIL
-        sync: false  # Set manually: admin email
+        value: edith0530s@gmail.com
       - key: DJANGO_SUPERUSER_PASSWORD
-        sync: false  # Set manually: admin password (strong password recommended)
+        value: edithcloths0530@2025./
     healthCheckPath: /api/products/
 
 databases:
