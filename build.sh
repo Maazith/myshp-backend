@@ -28,11 +28,11 @@ echo "📥 Installing system dependencies for PostgreSQL..."
 echo "📥 Installing Python dependencies..."
 pip install -r requirements.txt --quiet
 
-# Explicitly install psycopg2-binary with verbose output if previous install failed
-echo "🔍 Verifying psycopg2-binary installation..."
-if ! python -c "import psycopg2" 2>/dev/null; then
-    echo "⚠️  psycopg2 not found, reinstalling..."
-    pip install --no-cache-dir psycopg2-binary==2.9.9
+# Explicitly install psycopg (psycopg3) with verbose output if previous install failed
+echo "🔍 Verifying psycopg installation..."
+if ! python -c "import psycopg" 2>/dev/null; then
+    echo "⚠️  psycopg not found, reinstalling..."
+    pip install --no-cache-dir "psycopg[binary]==3.1.18"
 fi
 
 # Verify critical packages
@@ -43,14 +43,14 @@ python -c "import gunicorn; print('Gunicorn installed')" || exit 1
 python -c "import whitenoise; print('WhiteNoise installed')" || exit 1
 python -c "import PIL; print('Pillow installed')" || exit 1
 
-# CRITICAL: Verify psycopg2 installation (PostgreSQL adapter)
-echo "🔍 Verifying PostgreSQL adapter (psycopg2)..."
-python -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__} installed')" || {
-    echo "❌ ERROR: psycopg2 not installed correctly"
-    echo "📦 Attempting to reinstall psycopg2-binary..."
-    pip install --force-reinstall --no-cache-dir psycopg2-binary==2.9.9 || exit 1
-    python -c "import psycopg2; print(f'psycopg2 {psycopg2.__version__} installed')" || {
-        echo "❌ ERROR: psycopg2 installation failed"
+# CRITICAL: Verify PostgreSQL adapter installation (psycopg3 for Python 3.13+)
+echo "🔍 Verifying PostgreSQL adapter (psycopg)..."
+python -c "import psycopg; print(f'psycopg {psycopg.__version__} installed')" || {
+    echo "❌ ERROR: psycopg not installed correctly"
+    echo "📦 Attempting to reinstall psycopg..."
+    pip install --force-reinstall --no-cache-dir "psycopg[binary]==3.1.18" || exit 1
+    python -c "import psycopg; print(f'psycopg {psycopg.__version__} installed')" || {
+        echo "❌ ERROR: psycopg installation failed"
         exit 1
     }
 }
