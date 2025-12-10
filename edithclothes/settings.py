@@ -303,13 +303,17 @@ CORS_ALLOW_METHODS = [
 ]
 
 # Allowed headers (including Authorization and Content-Type for JSON)
+# Added cache-control, pragma, expires for cache-busting headers
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
     'authorization',
+    'cache-control',  # Added for cache-busting
     'content-type',
     'dnt',
+    'expires',  # Added for cache-busting
     'origin',
+    'pragma',  # Added for cache-busting
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
