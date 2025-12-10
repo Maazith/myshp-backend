@@ -411,11 +411,18 @@ else:
 # Security Settings for Production (HTTPS)
 # Note: SECURE_SSL_REDIRECT can cause issues on Render if not configured properly
 # Render handles HTTPS at the load balancer level, so we disable SSL redirect
+# Session cookie settings for cross-origin support
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-origin requests (needed for Vercel frontend)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to keep it alive
+
 if not DEBUG:
     # Disable SSL redirect - Render handles HTTPS at load balancer
     SECURE_SSL_REDIRECT = False  # Render handles HTTPS, don't force redirect
-    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS
+    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS (required when SameSite=None)
     CSRF_COOKIE_SECURE = True  # Secure CSRF tokens
+    CSRF_COOKIE_SAMESITE = 'None'  # Allow cross-origin CSRF
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     X_FRAME_OPTIONS = 'DENY'
@@ -428,6 +435,8 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'  # Lax is fine for local development
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Email Configuration
 EMAIL_BACKEND = os.environ.get(
