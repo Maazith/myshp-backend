@@ -420,7 +420,6 @@ SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to keep it al
 # CSRF settings for cross-origin support
 CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token (needed for some frontend frameworks)
 CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin CSRF in production
-CSRF_TRUSTED_ORIGINS = CSRF_TRUSTED_ORIGINS if 'CSRF_TRUSTED_ORIGINS' in locals() else []
 
 if not DEBUG:
     # Disable SSL redirect - Render handles HTTPS at load balancer
