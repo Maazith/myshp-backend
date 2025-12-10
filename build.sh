@@ -26,14 +26,26 @@ echo "📥 Installing system dependencies for PostgreSQL..."
 
 # Install dependencies
 echo "📥 Installing Python dependencies..."
-pip install -r requirements.txt --quiet
+pip install -r requirements.txt
 
-# Explicitly install psycopg (psycopg3) with verbose output if previous install failed
-echo "🔍 Verifying psycopg installation..."
-if ! python -c "import psycopg" 2>/dev/null; then
-    echo "⚠️  psycopg not found, reinstalling..."
+# CRITICAL: Explicitly install psycopg3 (psycopg) for Python 3.13 compatibility
+echo "🔍 Installing PostgreSQL adapter (psycopg3)..."
+pip install --no-cache-dir "psycopg[binary]==3.1.18" || {
+    echo "⚠️  Standard install failed, trying alternative..."
+    pip install --no-cache-dir --upgrade pip setuptools wheel
     pip install --no-cache-dir "psycopg[binary]==3.1.18"
-fi
+}
+
+# Verify psycopg3 installation
+echo "🔍 Verifying psycopg3 installation..."
+python -c "import psycopg; print(f'✅ psycopg {psycopg.__version__} installed successfully')" || {
+    echo "❌ ERROR: psycopg3 installation failed"
+    echo "📦 Attempting to install psycopg2-binary as fallback..."
+    pip install --no-cache-dir psycopg2-binary==2.9.9 || {
+        echo "❌ ERROR: Both psycopg3 and psycopg2-binary installation failed"
+        exit 1
+    }
+}
 
 # Verify critical packages
 echo "✅ Verifying critical packages..."
