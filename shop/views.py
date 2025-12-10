@@ -166,19 +166,39 @@ class LoginView(TokenObtainPairView):
 
     def post(self, request, *args, **kwargs):
         try:
+            # Authenticate user first to get the user object
+            username = request.data.get('username') or request.data.get('email')
+            password = request.data.get('password')
+            
+            if not username or not password:
+                return Response(
+                    {'detail': 'Username/email and password are required.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Try to authenticate with username first, then email
+            user = authenticate(request, username=username, password=password)
+            if not user:
+                # Try with email if username didn't work
+                try:
+                    user_obj = User.objects.get(email=username)
+                    user = authenticate(request, username=user_obj.username, password=password)
+                except User.DoesNotExist:
+                    pass
+            
+            if not user:
+                return Response(
+                    {'detail': 'Invalid username or password. Please check your credentials and try again.'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            
+            # Get the token response from parent class
             response = super().post(request, *args, **kwargs)
+            
             if response.status_code == status.HTTP_200_OK:
-                username = request.data.get('username') or request.data.get('email')
-                if username:
-                    try:
-                        user = User.objects.get(username=username)
-                        response.data['user'] = UserSerializer(user).data
-                    except User.DoesNotExist:
-                        # User doesn't exist - this shouldn't happen if login succeeded
-                        # But handle gracefully
-                        response.data['user'] = None
-                else:
-                    response.data['user'] = None
+                # Add user data to response
+                response.data['user'] = UserSerializer(user).data
+            
             return response
         except Exception as e:
             # Handle authentication errors more gracefully
