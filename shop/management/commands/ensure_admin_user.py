@@ -43,17 +43,17 @@ class Command(BaseCommand):
         username = (
             options['username']
             or os.environ.get('DJANGO_SUPERUSER_USERNAME')
-            or 'admin'
+            or 'Edithcloths'
         )
         email = (
             options['email']
             or os.environ.get('DJANGO_SUPERUSER_EMAIL')
-            or 'admin@example.com'
+            or 'edith0530s@gmail.com'
         )
         password = (
             options['password']
             or os.environ.get('DJANGO_SUPERUSER_PASSWORD')
-            or 'admin123'
+            or 'edithcloths0530@2025./'
         )
         
         # Log what we're using (hide password)

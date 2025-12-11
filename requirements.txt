@@ -1,14 +1,26 @@
+# Core Django
 Django==4.2.10
 djangorestframework==3.15.1
 django-cors-headers==4.3.1
 djangorestframework-simplejwt==5.3.1
 
 # Database
-psycopg2-binary==2.9.9
-dj-database-url==2.1.0
+# Using psycopg (psycopg3) instead of psycopg2-binary for Python 3.13 compatibility
+psycopg[binary]==3.1.18
+dj-database-url==2.2.0
 
-# Additional recommended packages
-Pillow==12.0.0           # For image uploads (product images, banners)
-python-dotenv==1.0.1      # If environment variables needed later
+# Image processing
+Pillow==10.4.0           # For image uploads (product images, banners) - Updated for compatibility
+
+# Production server
 gunicorn==21.2.0          # For production servers like Render
-whitenoise==6.6.0         # For serving static files in productio
+
+# Static files
+whitenoise==6.6.0         # For serving static files in production
+
+# Environment variables (optional, for local development)
+python-dotenv==1.0.1
+
+# Cloudinary for media storage (required for Render deployment)
+cloudinary==1.41.0
+django-cloudinary-storage==0.3.0

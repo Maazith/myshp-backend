@@ -3,7 +3,10 @@ Django management command to delete all products and banners.
 Usage: python manage.py delete_all_products_banners
 """
 
+import os
+import shutil
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from shop.models import Product, Banner
 
 
@@ -25,6 +28,11 @@ class Command(BaseCommand):
             '--no-input',
             action='store_true',
             help='Skip confirmation prompt',
+        )
+        parser.add_argument(
+            '--delete-images',
+            action='store_true',
+            help='Also delete all product and banner image files from media directory',
         )
 
     def handle(self, *args, **options):
@@ -70,10 +78,45 @@ class Command(BaseCommand):
             if banners_count > 0:
                 Banner.objects.all().delete()
                 self.stdout.write(
-                    self.style.SUCCESS(f'✅ Successfully deleted {banners_count} banner(s)')
+                    self.style.SUCCESS(f'Successfully deleted {banners_count} banner(s)')
                 )
             else:
                 self.stdout.write(self.style.WARNING('No banners to delete.'))
         
-        self.stdout.write(self.style.SUCCESS('\n🎉 Operation completed!'))
+        # Delete media files if requested
+        if options['delete_images']:
+            deleted_files = 0
+            deleted_dirs = 0
+            
+            # Delete product images
+            products_dir = os.path.join(settings.MEDIA_ROOT, 'products')
+            if os.path.exists(products_dir):
+                for item in os.listdir(products_dir):
+                    item_path = os.path.join(products_dir, item)
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+                        deleted_files += 1
+                    elif os.path.isdir(item_path):
+                        shutil.rmtree(item_path)
+                        deleted_dirs += 1
+            
+            # Delete banner images
+            banners_dir = os.path.join(settings.MEDIA_ROOT, 'banners')
+            if os.path.exists(banners_dir):
+                for item in os.listdir(banners_dir):
+                    item_path = os.path.join(banners_dir, item)
+                    if os.path.isfile(item_path):
+                        os.remove(item_path)
+                        deleted_files += 1
+            
+            if deleted_files > 0 or deleted_dirs > 0:
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f'Deleted {deleted_files} image file(s) and {deleted_dirs} directory/directories from media folder'
+                    )
+                )
+            else:
+                self.stdout.write(self.style.WARNING('No image files to delete.'))
+        
+        self.stdout.write(self.style.SUCCESS('\nOperation completed!'))
 

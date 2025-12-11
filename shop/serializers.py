@@ -18,7 +18,7 @@ from .models import (
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'is_staff', 'date_joined')
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -133,17 +133,22 @@ class ProductColorVariantSerializer(serializers.Serializer):
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
-        queryset=Category.objects.all(), source='category', write_only=True, required=True
+        queryset=Category.objects.all(), source='category', write_only=True, required=False, allow_null=True
     )
     variants = ProductVariantSerializer(many=True, read_only=True)
     images = ProductImageSerializer(many=True, read_only=True)
     base_price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, default=0)
     hero_media = serializers.FileField(required=False, allow_null=True)
+    # Add name field mapped from title for frontend compatibility
+    name = serializers.CharField(source='title', read_only=True)
+    # Add hero_media_url for frontend to use
+    hero_media_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = (
             'id',
+            'name',  # Frontend expects 'name' field
             'category',
             'category_id',
             'title',
@@ -152,13 +157,24 @@ class ProductSerializer(serializers.ModelSerializer):
             'base_price',
             'gender',
             'hero_media',
+            'hero_media_url',  # URL version of hero_media
             'is_featured',
             'is_active',
             'variants',
             'images',
             'created_at',
         )
-        read_only_fields = ('slug', 'created_at')
+        read_only_fields = ('slug', 'created_at', 'name', 'hero_media_url')
+
+    def get_hero_media_url(self, obj):
+        """Return absolute URL for hero_media"""
+        if obj.hero_media and hasattr(obj.hero_media, 'url'):
+            request = self.context.get('request')
+            url = obj.hero_media.url
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        return None
 
 
 class BannerSerializer(serializers.ModelSerializer):

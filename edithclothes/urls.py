@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.http import JsonResponse
 from shop.admin import dashboard_view
+from shop import views
 
 # Use default admin site - models are already registered in shop/admin.py
 admin.site.site_header = "EdithCloths Admin"
@@ -33,6 +34,10 @@ urlpatterns = [
     path('edith-admin-login/dashboard/', dashboard_view, name='admin_dashboard'),
     path('edith-admin-login/', admin.site.urls),  # Use default Django admin
     path('api/', include('shop.urls')),
+    # User authentication URLs
+    path('login/', views.user_login_view, name='user_login'),
+    path('signup/', views.user_signup_view, name='user_signup'),
+    path('logout/', views.user_logout_view, name='user_logout'),
 ]
 
 # Serve media files in production (Render handles static files via WhiteNoise)

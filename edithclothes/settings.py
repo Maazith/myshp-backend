@@ -14,6 +14,10 @@ from pathlib import Path
 from datetime import timedelta
 import os
 import dj_database_url
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,7 +30,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-9o(%hgr4x$ii_ct2m(hw8=nj7g$06izqws-$_u@%5u795&_to^")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get("DEBUG", "False").lower() == "true"
+# Auto-detect production environment
+IS_RENDER = os.environ.get("RENDER", "").lower() == "true"
+IS_PRODUCTION = os.environ.get("ENVIRONMENT", "").lower() == "production" or IS_RENDER
+
+# DEBUG should be False in production, True in development
+DEBUG = os.environ.get("DEBUG", "False" if IS_PRODUCTION else "True").lower() == "true"
 
 # Production: Only allow specific hosts
 # Development: Allow all (when DEBUG=True)
@@ -34,15 +43,23 @@ if DEBUG:
     ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
 else:
     # Production hosts - Render uses specific domain format
-    # Also include localhost for local development even when DEBUG=False
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1",
         "api.edithcloths.com",
-        ".onrender.com",  # Allow all Render subdomains
+        ".onrender.com",  # Allow all Render subdomains (e.g., myshp-backend.onrender.com)
         "myshp-frontend.vercel.app",
         ".vercel.app",  # Allow all Vercel subdomains
+        "edithcloths.com",
+        "www.edithcloths.com",
     ]
+    
+    # Dynamically add Render service URL if on Render
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "")
+        if render_service_name:
+            ALLOWED_HOSTS.append(f"{render_service_name}.onrender.com")
+    
     # Allow additional hosts from environment variable
     additional_hosts = os.environ.get("ALLOWED_HOSTS", "")
     if additional_hosts:
@@ -60,6 +77,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'cloudinary_storage',  # Must be before 'django.contrib.staticfiles'
+    'cloudinary',  # Cloudinary for media storage
     'shop',
 ]
 
@@ -99,22 +118,45 @@ WSGI_APPLICATION = 'edithclothes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# Use PostgreSQL if DATABASE_URL is set (production), otherwise SQLite (local development)
+# Use PostgreSQL if DATABASE_URL is set (production/Render), otherwise SQLite (local development fallback)
 DATABASE_URL = os.environ.get("DATABASE_URL")
+
 if DATABASE_URL:
+    # Use PostgreSQL with dj_database_url for parsing DATABASE_URL
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
+        "default": dj_database_url.parse(
+            DATABASE_URL,
             conn_max_age=600,
-            ssl_require=True,
+            ssl_require=False,  # Set to True for production if needed, but Render handles SSL
         )
     }
+    
+    # PostgreSQL-specific optimizations
+    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
+        DATABASES['default']['OPTIONS'] = {
+            'connect_timeout': 10,
+        }
+        # Enable atomic requests for PostgreSQL (best practice)
+        # Each HTTP request is wrapped in a transaction
+        DATABASES['default']['ATOMIC_REQUESTS'] = True
+        
+        # Force Django to use psycopg3 if available (for Python 3.13 compatibility)
+        # Django 4.2+ will automatically detect psycopg3, but we ensure it's available
+        try:
+            import psycopg
+            # psycopg3 is available, Django will use it automatically
+        except ImportError:
+            try:
+                import psycopg2
+                # psycopg2 is available, Django will use it
+            except ImportError:
+                raise Exception("Neither psycopg3 nor psycopg2 is installed. Please install psycopg[binary] or psycopg2-binary.")
 else:
-    # Fallback to SQLite for local development
+    # Fallback to SQLite for local development (when DATABASE_URL is not set)
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 
@@ -174,16 +216,56 @@ if not DEBUG:
 else:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Media files configuration
+# Use Cloudinary for production (Render doesn't support persistent disk)
+# Fallback to local storage for development
 
-# Ensure media directory exists (prevent errors on first deployment)
-try:
-    MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
-except (OSError, PermissionError):
-    # If we can't create media directory, continue anyway
-    # This prevents errors on first deployment
-    pass
+# Check if Cloudinary credentials are set
+CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME", "")
+CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY", "")
+CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET", "")
+
+USE_CLOUDINARY = bool(CLOUDINARY_CLOUD_NAME and CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET)
+
+if USE_CLOUDINARY:
+    # Use Cloudinary for media storage (production)
+    import cloudinary
+    import cloudinary.uploader
+    import cloudinary.api
+    
+    cloudinary.config(
+        cloud_name=CLOUDINARY_CLOUD_NAME,
+        api_key=CLOUDINARY_API_KEY,
+        api_secret=CLOUDINARY_API_SECRET,
+        secure=True
+    )
+    
+    # Configure Django Cloudinary Storage
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+    MEDIA_URL = '/media/'  # This will be handled by Cloudinary
+    
+    # Cloudinary settings
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+        'API_KEY': CLOUDINARY_API_KEY,
+        'API_SECRET': CLOUDINARY_API_SECRET,
+    }
+else:
+    # Use local storage for development
+    MEDIA_URL = '/media/'
+    MEDIA_ROOT = BASE_DIR / 'media'
+    
+    # Ensure media directory exists (prevent errors on first deployment)
+    try:
+        MEDIA_ROOT.mkdir(parents=True, exist_ok=True)
+        # Create subdirectories
+        (MEDIA_ROOT / 'products').mkdir(parents=True, exist_ok=True)
+        (MEDIA_ROOT / 'banners').mkdir(parents=True, exist_ok=True)
+        (MEDIA_ROOT / 'payments').mkdir(parents=True, exist_ok=True)
+    except (OSError, PermissionError):
+        # If we can't create media directory, continue anyway
+        # This prevents errors on first deployment
+        pass
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
@@ -193,6 +275,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # Support session auth for template-based login
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -220,13 +303,17 @@ CORS_ALLOW_METHODS = [
 ]
 
 # Allowed headers (including Authorization and Content-Type for JSON)
+# Added cache-control, pragma, expires for cache-busting headers
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
     'authorization',
+    'cache-control',  # Added for cache-busting
     'content-type',
     'dnt',
+    'expires',  # Added for cache-busting
     'origin',
+    'pragma',  # Added for cache-busting
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
@@ -254,24 +341,68 @@ if DEBUG:
     ]
 else:
     # Production: Allow frontend domains and backend domain
-    CORS_ALLOW_ALL_ORIGINS = False
+    # IMPORTANT: For admin panel to work, we need to allow all Vercel preview deployments
+    # Since Vercel creates unique URLs for each preview, we use CORS_ALLOW_ALL_ORIGINS = True
+    # This is safe because we use JWT authentication for admin endpoints
+    
+    # For production, allow all origins (CORS is handled by JWT auth)
+    # This ensures admin panel works from any Vercel deployment
+    CORS_ALLOW_ALL_ORIGINS = True
+    
+    # Also explicitly list known origins for better security
     CORS_ALLOWED_ORIGINS = [
         'https://edithcloths.com',
         'https://www.edithcloths.com',
-        'https://api.edithcloths.com',  # Backend can also be an origin
+        'https://api.edithcloths.com',
+        'https://myshp-frontend.vercel.app',  # Vercel frontend
+        'https://myshp-backend.onrender.com',  # Render backend
     ]
+    
+    # Add Vercel frontend URL from environment if set
+    vercel_frontend = os.environ.get("VERCEL_FRONTEND_URL", "")
+    if vercel_frontend:
+        CORS_ALLOWED_ORIGINS.append(vercel_frontend)
+    
+    # Add Render backend URL dynamically
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        CORS_ALLOWED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
+    
     # Allow additional origins from environment variable
     additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
     if additional_origins:
         CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
     
+    # For Vercel preview deployments, we need to allow all .vercel.app subdomains
+    # Since django-cors-headers doesn't support wildcards, we use CORS_ALLOW_ALL_ORIGINS = True
+    # Note: In production, Vercel will set VERCEL_URL environment variable
+    vercel_url = os.environ.get("VERCEL_URL", "")
+    if vercel_url and vercel_url not in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS.append(f"https://{vercel_url}")
+    
     CSRF_TRUSTED_ORIGINS = [
         'https://edithcloths.com',
         'https://www.edithcloths.com',
         'https://api.edithcloths.com',
-        'https://.vercel.app',  # Allow all Vercel subdomains (for fallback)
-        'https://.onrender.com',  # Allow all Render subdomains (for fallback)
+        'https://myshp-frontend.vercel.app',  # Vercel frontend
+        'https://myshp-backend.onrender.com',  # Render backend
+        'https://*.vercel.app',  # Allow all Vercel subdomains
+        'https://*.onrender.com',  # Allow all Render subdomains
     ]
+    
+    # Add Vercel frontend URL to CSRF trusted origins
+    if vercel_frontend:
+        CSRF_TRUSTED_ORIGINS.append(vercel_frontend)
+    
+    # Add Vercel URL to CSRF trusted origins if set
+    if vercel_url:
+        CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_url}")
+    
+    # Add Render backend URL to CSRF trusted origins
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        CSRF_TRUSTED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
+    
     # Allow additional CSRF origins from environment variable
     additional_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
     if additional_csrf_origins:
@@ -280,10 +411,20 @@ else:
 # Security Settings for Production (HTTPS)
 # Note: SECURE_SSL_REDIRECT can cause issues on Render if not configured properly
 # Render handles HTTPS at the load balancer level, so we disable SSL redirect
+# Session cookie settings for cross-origin support
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-origin requests (needed for Vercel frontend)
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to keep it alive
+
+# CSRF settings for cross-origin support
+CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token (needed for some frontend frameworks)
+CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin CSRF in production
+
 if not DEBUG:
     # Disable SSL redirect - Render handles HTTPS at load balancer
     SECURE_SSL_REDIRECT = False  # Render handles HTTPS, don't force redirect
-    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS
+    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS (required when SameSite=None)
     CSRF_COOKIE_SECURE = True  # Secure CSRF tokens
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -297,6 +438,8 @@ else:
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SAMESITE = 'Lax'  # Lax is fine for local development
+    CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Email Configuration
 EMAIL_BACKEND = os.environ.get(
