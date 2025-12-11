@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Max
 import json
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -413,7 +413,9 @@ class ProductCreateView(APIView):
                 product.is_active = True
                 product.save()
             
-            self._sync_variant_images(product, request.FILES)
+            # Handle multiple product images
+            self._sync_product_images(product, request.FILES)
+            
             # Return full product data
             product_data = ProductSerializer(product, context={'request': request}).data
             print(f"✅ Product created: {product.title} (ID: {product.id}, Gender: {product.gender}, Active: {product.is_active})")
@@ -501,17 +503,21 @@ class ProductCreateView(APIView):
         
         return created_variants
     
-    def _sync_variant_images(self, product, files):
-        """Process and link images to variants based on FormData keys"""
+    def _sync_product_images(self, product, files):
+        """Process multiple product images - supports both product-level and variant-specific images"""
         if not files:
             return
         
-        # Process variant images (format: variant_{idx}_color_{color}_image_{imgIdx})
+        # Process product-level images (format: product_images[] or product_image_{idx})
+        product_images = []
         variant_images_map = {}
         
         for key, file in files.items():
-            if key.startswith('variant_') and '_color_' in key:
-                # Parse: variant_{idx}_color_{color}_image_{imgIdx}
+            # Check for product-level images
+            if key.startswith('product_image') or key == 'product_images[]' or (key.startswith('images[') and key.endswith(']')):
+                product_images.append(file)
+            # Also support legacy variant images (format: variant_{idx}_color_{color}_image_{imgIdx})
+            elif key.startswith('variant_') and '_color_' in key:
                 parts = key.split('_')
                 try:
                     color_idx = parts.index('color')
@@ -523,12 +529,24 @@ class ProductCreateView(APIView):
                 except (IndexError, ValueError):
                     continue
         
-        # Link images to variants
+        # Create product-level images (not linked to specific variant)
+        for idx, image_file in enumerate(product_images):
+            try:
+                ProductImage.objects.create(
+                    product=product,
+                    variant=None,  # Product-level image
+                    image=image_file,
+                    display_order=idx,
+                    is_primary=(idx == 0)
+                )
+            except Exception as e:
+                print(f"Error creating ProductImage: {e}")
+        
+        # Also support variant-specific images (for backward compatibility)
         for color, images in variant_images_map.items():
-            # Find variants with this color
             variants = ProductVariant.objects.filter(product=product, color=color)
             if variants.exists():
-                variant = variants.first()  # Use first variant of this color
+                variant = variants.first()
                 for idx, image_file in enumerate(images):
                     try:
                         ProductImage.objects.create(
@@ -540,17 +558,82 @@ class ProductCreateView(APIView):
                         )
                     except Exception as e:
                         print(f"Error creating ProductImage: {e}")
-                        # Continue with other images even if one fails
 
 
 class ProductUpdateView(APIView):
     permission_classes = [permissions.IsAdminUser]
+
+    def _sync_product_images(self, product, files):
+        """Process multiple product images - supports both product-level and variant-specific images"""
+        if not files:
+            return
+        
+        # Process product-level images (format: product_images[] or product_image_{idx})
+        product_images = []
+        variant_images_map = {}
+        
+        for key, file in files.items():
+            # Check for product-level images
+            if key.startswith('product_image') or key == 'product_images[]' or (key.startswith('images[') and key.endswith(']')):
+                product_images.append(file)
+            # Also support legacy variant images (format: variant_{idx}_color_{color}_image_{imgIdx})
+            elif key.startswith('variant_') and '_color_' in key:
+                parts = key.split('_')
+                try:
+                    color_idx = parts.index('color')
+                    color = parts[color_idx + 1]
+                    
+                    if color not in variant_images_map:
+                        variant_images_map[color] = []
+                    variant_images_map[color].append(file)
+                except (IndexError, ValueError):
+                    continue
+        
+        # Get current max display_order for product-level images
+        max_order = ProductImage.objects.filter(product=product, variant__isnull=True).aggregate(
+            max_order=Max('display_order')
+        )['max_order'] or -1
+        
+        # Create product-level images (not linked to specific variant)
+        for idx, image_file in enumerate(product_images):
+            try:
+                ProductImage.objects.create(
+                    product=product,
+                    variant=None,  # Product-level image
+                    image=image_file,
+                    display_order=max_order + idx + 1,
+                    is_primary=False  # Only set primary if it's the first image overall
+                )
+            except Exception as e:
+                print(f"Error creating ProductImage: {e}")
+        
+        # Also support variant-specific images (for backward compatibility)
+        for color, images in variant_images_map.items():
+            variants = ProductVariant.objects.filter(product=product, color=color)
+            if variants.exists():
+                variant = variants.first()
+                variant_max_order = ProductImage.objects.filter(product=product, variant=variant).aggregate(
+                    max_order=Max('display_order')
+                )['max_order'] or -1
+                for idx, image_file in enumerate(images):
+                    try:
+                        ProductImage.objects.create(
+                            product=product,
+                            variant=variant,
+                            image=image_file,
+                            display_order=variant_max_order + idx + 1,
+                            is_primary=(idx == 0 and variant_max_order == -1)
+                        )
+                    except Exception as e:
+                        print(f"Error creating ProductImage: {e}")
 
     def put(self, request, pk):
         product = get_object_or_404(Product, pk=pk)
         serializer = ProductSerializer(product, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         product = serializer.save()
+        
+        # Handle variants
         variants = request.data.get('variants')
         if variants is not None:
             ProductVariant.objects.filter(product=product).delete()
@@ -566,7 +649,36 @@ class ProductUpdateView(APIView):
                     stock=variant.get('stock', 0),
                     price_override=variant.get('price'),
                 )
-        return Response(serializer.data)
+        
+        # Handle image deletions (if image_ids_to_delete is provided)
+        image_ids_to_delete = request.data.get('image_ids_to_delete')
+        if image_ids_to_delete:
+            try:
+                ids = json.loads(image_ids_to_delete) if isinstance(image_ids_to_delete, str) else image_ids_to_delete
+                ProductImage.objects.filter(product=product, id__in=ids).delete()
+            except (json.JSONDecodeError, TypeError):
+                pass
+        
+        # Handle new image uploads
+        if request.FILES:
+            # Process new images
+            self._sync_product_images(product, request.FILES)
+        
+        # Handle display order updates (if provided)
+        image_order_updates = request.data.get('image_order_updates')
+        if image_order_updates:
+            try:
+                updates = json.loads(image_order_updates) if isinstance(image_order_updates, str) else image_order_updates
+                for update in updates:
+                    image_id = update.get('id')
+                    display_order = update.get('display_order')
+                    if image_id and display_order is not None:
+                        ProductImage.objects.filter(product=product, id=image_id).update(display_order=display_order)
+            except (json.JSONDecodeError, TypeError):
+                pass
+        
+        product_data = ProductSerializer(product, context={'request': request}).data
+        return Response(product_data)
 
 
 class ProductDeleteView(APIView):
@@ -591,6 +703,47 @@ class ProductDeleteView(APIView):
             print(f"❌ Error deleting product: {error_detail}")
             return Response(
                 {'detail': f'Error deleting product: {error_detail}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ProductImageDeleteView(APIView):
+    """Delete a specific product image"""
+    permission_classes = [permissions.IsAdminUser]
+
+    def delete(self, request, pk):
+        try:
+            image = get_object_or_404(ProductImage, pk=pk)
+            product_id = image.product.id
+            image.delete()
+            return Response({'detail': 'Image deleted successfully'}, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'detail': f'Error deleting image: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
+class ProductImageOrderView(APIView):
+    """Update display order of product images"""
+    permission_classes = [permissions.IsAdminUser]
+
+    def post(self, request, pk):
+        try:
+            product = get_object_or_404(Product, pk=pk)
+            order_updates = request.data.get('order_updates', [])
+            
+            for update in order_updates:
+                image_id = update.get('id')
+                display_order = update.get('display_order')
+                if image_id and display_order is not None:
+                    ProductImage.objects.filter(product=product, id=image_id).update(display_order=display_order)
+            
+            product_data = ProductSerializer(product, context={'request': request}).data
+            return Response(product_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(
+                {'detail': f'Error updating image order: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
