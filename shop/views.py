@@ -1028,6 +1028,15 @@ class AdminOrdersView(APIView):
         return Response(serializer.data)
 
 
+class AdminOrderDetailView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request, pk):
+        order = get_object_or_404(Order, pk=pk)
+        serializer = OrderSerializer(order, context={'request': request})
+        return Response(serializer.data)
+
+
 class AdminMarkPaidView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
