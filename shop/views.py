@@ -1073,7 +1073,6 @@ class AdminUsersView(APIView):
     permission_classes = [permissions.IsAdminUser]
 
     def get(self, request):
-        from django.contrib.auth.models import User
         users = User.objects.all().order_by('-date_joined')
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data)
