@@ -1,12 +1,18 @@
 from django.contrib.auth.models import User
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
 from django.conf import settings
 from django.db.models import Q, Max
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import ensure_csrf_cookie
 import json
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
     Category,
@@ -1096,3 +1102,189 @@ class SiteSettingsUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+# User Authentication Views (Template-based)
+@require_http_methods(["GET", "POST"])
+@ensure_csrf_cookie
+def user_login_view(request):
+    """User login page"""
+    if request.user.is_authenticated:
+        next_url = request.GET.get('next', '/')
+        return redirect(next_url)
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        next_url = request.POST.get('next', request.GET.get('next', '/'))
+        
+        if not username or not password:
+            messages.error(request, 'Please enter both username and password.')
+            return render(request, 'shop/login.html', {'next': next_url})
+        
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            
+            # Transfer cart from anonymous user if exists
+            anonymous_user_id = request.session.get('anonymous_user_id')
+            if anonymous_user_id:
+                try:
+                    anonymous_user = User.objects.get(pk=anonymous_user_id, is_active=False)
+                    anonymous_cart = get_user_cart(anonymous_user)
+                    user_cart = get_user_cart(user)
+                    
+                    # Transfer cart items
+                    for item in anonymous_cart.items.all():
+                        existing_item = user_cart.items.filter(variant=item.variant).first()
+                        if existing_item:
+                            existing_item.quantity += item.quantity
+                            existing_item.save()
+                        else:
+                            item.cart = user_cart
+                            item.save()
+                    
+                    anonymous_cart.items.all().delete()
+                    del request.session['anonymous_user_id']
+                except User.DoesNotExist:
+                    pass
+            
+            # Generate JWT tokens for frontend API calls
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            # Get frontend URL from settings
+            frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            
+            # If redirecting to frontend, include tokens in URL
+            if next_url and next_url != '/':
+                if '.html' in next_url or next_url.startswith('http'):
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+                elif next_url.startswith('/') and ('.html' in next_url or 'cart' in next_url.lower() or 'checkout' in next_url.lower() or 'product' in next_url.lower()):
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+            
+            # Default: redirect to frontend homepage with tokens
+            redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
+            return redirect(redirect_url)
+        else:
+            messages.error(request, 'Invalid username or password. Please try again.')
+    
+    next_url = request.GET.get('next', '/')
+    return render(request, 'shop/login.html', {'next': next_url})
+
+
+@require_http_methods(["GET", "POST"])
+@ensure_csrf_cookie
+def user_signup_view(request):
+    """User signup page"""
+    if request.user.is_authenticated:
+        return redirect('/')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip().lower()
+        password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
+        next_url = request.POST.get('next', request.GET.get('next', '/'))
+        
+        # Validation
+        errors = []
+        if not username:
+            errors.append('Username is required.')
+        elif len(username) < 3:
+            errors.append('Username must be at least 3 characters long.')
+        elif User.objects.filter(username=username).exists():
+            errors.append('Username already exists. Please choose another.')
+        
+        if not email:
+            errors.append('Email is required.')
+        elif User.objects.filter(email__iexact=email).exists():
+            errors.append('An account with this email already exists. Please log in instead.')
+        
+        if not password:
+            errors.append('Password is required.')
+        elif len(password) < 6:
+            errors.append('Password must be at least 6 characters long.')
+        
+        if password != password_confirm:
+            errors.append('Passwords do not match.')
+        
+        if errors:
+            for error in errors:
+                messages.error(request, error)
+            return render(request, 'shop/signup.html', {'next': next_url})
+        
+        # Create user
+        try:
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password
+            )
+            login(request, user)
+            
+            # Transfer cart from anonymous user if exists
+            anonymous_user_id = request.session.get('anonymous_user_id')
+            if anonymous_user_id:
+                try:
+                    anonymous_user = User.objects.get(pk=anonymous_user_id, is_active=False)
+                    anonymous_cart = get_user_cart(anonymous_user)
+                    user_cart = get_user_cart(user)
+                    
+                    # Transfer cart items
+                    for item in anonymous_cart.items.all():
+                        existing_item = user_cart.items.filter(variant=item.variant).first()
+                        if existing_item:
+                            existing_item.quantity += item.quantity
+                            existing_item.save()
+                        else:
+                            item.cart = user_cart
+                            item.save()
+                    
+                    anonymous_cart.items.all().delete()
+                    del request.session['anonymous_user_id']
+                except User.DoesNotExist:
+                    pass
+            
+            messages.success(request, 'Account created successfully!')
+            
+            # Generate JWT tokens for frontend API calls
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            
+            # Get frontend URL from settings
+            frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            
+            # If redirecting to frontend, include tokens in URL
+            if next_url and next_url != '/':
+                if '.html' in next_url or next_url.startswith('http'):
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+                elif next_url.startswith('/') and ('.html' in next_url or 'cart' in next_url.lower() or 'checkout' in next_url.lower() or 'product' in next_url.lower()):
+                    separator = '&' if '?' in next_url else '?'
+                    redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
+                    return redirect(redirect_url)
+            
+            # Default: redirect to frontend homepage with tokens
+            redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
+            return redirect(redirect_url)
+        except Exception as e:
+            messages.error(request, f'Error creating account: {str(e)}')
+    
+    next_url = request.GET.get('next', '/')
+    return render(request, 'shop/signup.html', {'next': next_url})
+
+
+@login_required
+def user_logout_view(request):
+    """User logout"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('/')
