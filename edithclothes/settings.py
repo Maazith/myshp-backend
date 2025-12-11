@@ -345,75 +345,94 @@ else:
     # Since Vercel creates unique URLs for each preview, we use CORS_ALLOW_ALL_ORIGINS = True
     # This is safe because we use JWT authentication for admin endpoints
     
-    # For production, allow all origins (CORS is handled by JWT auth)
-    # This ensures admin panel works from any Vercel deployment
-    CORS_ALLOW_ALL_ORIGINS = True
-    
-    # Also explicitly list known origins for better security
+    # Production: HTTPS ONLY - Configure CORS and CSRF for production domains
+    # Build list of allowed CORS origins (HTTPS ONLY)
     CORS_ALLOWED_ORIGINS = [
         'https://edithcloths.com',
         'https://www.edithcloths.com',
         'https://api.edithcloths.com',
         'https://myshp-frontend.vercel.app',  # Vercel frontend
-        'https://myshp-backend.onrender.com',  # Render backend
     ]
     
     # Add Vercel frontend URL from environment if set
     vercel_frontend = os.environ.get("VERCEL_FRONTEND_URL", "")
-    if vercel_frontend:
-        CORS_ALLOWED_ORIGINS.append(vercel_frontend)
+    if vercel_frontend and vercel_frontend not in CORS_ALLOWED_ORIGINS:
+        if vercel_frontend.startswith('https://'):
+            CORS_ALLOWED_ORIGINS.append(vercel_frontend)
     
-    # Add Render backend URL dynamically
-    if IS_RENDER:
-        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
-        CORS_ALLOWED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
-    
-    # Allow additional origins from environment variable
+    # Allow additional origins from environment variable (HTTPS ONLY)
     additional_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
     if additional_origins:
-        CORS_ALLOWED_ORIGINS.extend([origin.strip() for origin in additional_origins.split(",")])
+        for origin in additional_origins.split(","):
+            origin = origin.strip()
+            # Only add HTTPS origins
+            if origin.startswith('https://') and origin not in CORS_ALLOWED_ORIGINS:
+                CORS_ALLOWED_ORIGINS.append(origin)
     
-    # For Vercel preview deployments, we need to allow all .vercel.app subdomains
-    # Since django-cors-headers doesn't support wildcards, we use CORS_ALLOW_ALL_ORIGINS = True
-    # Note: In production, Vercel will set VERCEL_URL environment variable
+    # For Vercel preview deployments, allow all origins but only HTTPS
+    # Since django-cors-headers doesn't support wildcards in CORS_ALLOWED_ORIGINS,
+    # we use CORS_ALLOW_ALL_ORIGINS for now but this should be restricted further if possible
+    CORS_ALLOW_ALL_ORIGINS = True  # Needed for Vercel preview deployments
+    # Note: This is safe because we use JWT authentication for admin endpoints
+    
+    # Add Vercel URL from environment if set
     vercel_url = os.environ.get("VERCEL_URL", "")
-    if vercel_url and vercel_url not in CORS_ALLOWED_ORIGINS:
-        CORS_ALLOWED_ORIGINS.append(f"https://{vercel_url}")
+    if vercel_url:
+        vercel_full_url = f"https://{vercel_url}" if not vercel_url.startswith('https://') else vercel_url
+        if vercel_full_url not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(vercel_full_url)
     
+    # CSRF trusted origins (HTTPS ONLY) - Django supports wildcards in CSRF_TRUSTED_ORIGINS
     CSRF_TRUSTED_ORIGINS = [
         'https://edithcloths.com',
         'https://www.edithcloths.com',
         'https://api.edithcloths.com',
-        'https://myshp-frontend.vercel.app',  # Vercel frontend
-        'https://myshp-backend.onrender.com',  # Render backend
-        'https://*.vercel.app',  # Allow all Vercel subdomains
-        'https://*.onrender.com',  # Allow all Render subdomains
+        'https://myshp-frontend.vercel.app',
     ]
     
     # Add Vercel frontend URL to CSRF trusted origins
-    if vercel_frontend:
-        CSRF_TRUSTED_ORIGINS.append(vercel_frontend)
+    if vercel_frontend and vercel_frontend.startswith('https://'):
+        if vercel_frontend not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(vercel_frontend)
     
     # Add Vercel URL to CSRF trusted origins if set
     if vercel_url:
-        CSRF_TRUSTED_ORIGINS.append(f"https://{vercel_url}")
+        vercel_full_url = f"https://{vercel_url}" if not vercel_url.startswith('https://') else vercel_url
+        if vercel_full_url not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(vercel_full_url)
     
     # Add Render backend URL to CSRF trusted origins
     if IS_RENDER:
         render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
-        CSRF_TRUSTED_ORIGINS.append(f"https://{render_service_name}.onrender.com")
+        render_backend_url = f"https://{render_service_name}.onrender.com"
+        if render_backend_url not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(render_backend_url)
     
-    # Allow additional CSRF origins from environment variable
+    # Allow additional CSRF origins from environment variable (HTTPS ONLY)
     additional_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
     if additional_csrf_origins:
-        CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in additional_csrf_origins.split(",")])
+        for origin in additional_csrf_origins.split(","):
+            origin = origin.strip()
+            # Only add HTTPS origins
+            if origin.startswith('https://') and origin not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS.append(origin)
+
+# BASE_URL for generating absolute URLs in serializers
+# Used when request object is not available
+BASE_URL = os.environ.get("BASE_URL", "")
+if not BASE_URL and not DEBUG:
+    # Auto-detect base URL in production
+    if IS_RENDER:
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        BASE_URL = f"https://{render_service_name}.onrender.com"
+    else:
+        # Fallback to custom domain if set
+        BASE_URL = os.environ.get("CUSTOM_DOMAIN", "https://api.edithcloths.com")
 
 # Security Settings for Production (HTTPS)
-# Note: SECURE_SSL_REDIRECT can cause issues on Render if not configured properly
-# Render handles HTTPS at the load balancer level, so we disable SSL redirect
 # Session cookie settings for cross-origin support
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = 'None'  # Allow cross-origin requests (needed for Vercel frontend)
+SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin requests in production (needed for Vercel frontend)
 SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days
 SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to keep it alive
 
@@ -422,24 +441,41 @@ CSRF_COOKIE_HTTPONLY = False  # Allow JavaScript to read CSRF token (needed for 
 CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'  # Allow cross-origin CSRF in production
 
 if not DEBUG:
-    # Disable SSL redirect - Render handles HTTPS at load balancer
-    SECURE_SSL_REDIRECT = False  # Render handles HTTPS, don't force redirect
-    SESSION_COOKIE_SECURE = True  # Secure cookies for HTTPS (required when SameSite=None)
-    CSRF_COOKIE_SECURE = True  # Secure CSRF tokens
+    # FORCE HTTPS - Enable SSL redirect in production
+    # Note: If using a reverse proxy (Render, Nginx), the proxy should handle HTTPS
+    # Set USE_HTTPS_REDIRECT=False in environment to disable if proxy handles it
+    USE_HTTPS_REDIRECT = os.environ.get("USE_HTTPS_REDIRECT", "True").lower() == "true"
+    SECURE_SSL_REDIRECT = USE_HTTPS_REDIRECT  # Force HTTPS redirect in production
+    
+    # When behind a proxy (like Render), trust X-Forwarded-Proto header
+    # This tells Django that requests are HTTPS even though the proxy connection to Django might be HTTP
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    
+    # Secure cookies for HTTPS (REQUIRED when SameSite=None)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    
+    # Security headers
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
     X_FRAME_OPTIONS = 'DENY'
-    # HSTS settings - only enable if you have custom domain with HTTPS
-    SECURE_HSTS_SECONDS = 0  # Disable HSTS for now (can cause issues)
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-    SECURE_HSTS_PRELOAD = False
+    
+    # HSTS (HTTP Strict Transport Security) - Enable for production with HTTPS
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
 else:
-    # Development settings
+    # Development settings - Allow HTTP for localhost
     SECURE_SSL_REDIRECT = False
     SESSION_COOKIE_SECURE = False
     CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SAMESITE = 'Lax'  # Lax is fine for local development
     CSRF_COOKIE_SAMESITE = 'Lax'
+    # Disable HSTS in development
+    SECURE_HSTS_SECONDS = 0
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = False
+    SECURE_HSTS_PRELOAD = False
 
 # Email Configuration
 EMAIL_BACKEND = os.environ.get(

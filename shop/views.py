@@ -1154,12 +1154,18 @@ def user_login_view(request):
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             
-            # Get frontend URL from settings
+            # Get frontend URL from settings - ENSURE HTTPS
             frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            # Force HTTPS if not already (allow localhost for dev)
+            if not frontend_url.startswith('https://') and not frontend_url.startswith('http://localhost'):
+                frontend_url = frontend_url.replace('http://', 'https://')
             
             # If redirecting to frontend, include tokens in URL
             if next_url and next_url != '/':
                 if '.html' in next_url or next_url.startswith('http'):
+                    # Ensure HTTPS for external URLs (allow localhost for dev)
+                    if next_url.startswith('http://') and not next_url.startswith('http://localhost'):
+                        next_url = next_url.replace('http://', 'https://')
                     separator = '&' if '?' in next_url else '?'
                     redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
@@ -1168,7 +1174,7 @@ def user_login_view(request):
                     redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
             
-            # Default: redirect to frontend homepage with tokens
+            # Default: redirect to frontend homepage with tokens (HTTPS)
             redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
             return redirect(redirect_url)
         else:
@@ -1258,12 +1264,18 @@ def user_signup_view(request):
             access_token = str(refresh.access_token)
             refresh_token = str(refresh)
             
-            # Get frontend URL from settings
+            # Get frontend URL from settings - ENSURE HTTPS
             frontend_url = getattr(settings, 'VERCEL_FRONTEND_URL', 'https://myshp-frontend.vercel.app')
+            # Force HTTPS if not already (allow localhost for dev)
+            if not frontend_url.startswith('https://') and not frontend_url.startswith('http://localhost'):
+                frontend_url = frontend_url.replace('http://', 'https://')
             
             # If redirecting to frontend, include tokens in URL
             if next_url and next_url != '/':
                 if '.html' in next_url or next_url.startswith('http'):
+                    # Ensure HTTPS for external URLs (allow localhost for dev)
+                    if next_url.startswith('http://') and not next_url.startswith('http://localhost'):
+                        next_url = next_url.replace('http://', 'https://')
                     separator = '&' if '?' in next_url else '?'
                     redirect_url = f"{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
@@ -1272,7 +1284,7 @@ def user_signup_view(request):
                     redirect_url = f"{frontend_url}{next_url}{separator}token={access_token}&refresh={refresh_token}"
                     return redirect(redirect_url)
             
-            # Default: redirect to frontend homepage with tokens
+            # Default: redirect to frontend homepage with tokens (HTTPS)
             redirect_url = f"{frontend_url}/?token={access_token}&refresh={refresh_token}"
             return redirect(redirect_url)
         except Exception as e:
