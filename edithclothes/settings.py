@@ -118,47 +118,14 @@ WSGI_APPLICATION = 'edithclothes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# Use PostgreSQL if DATABASE_URL is set (production/Render), otherwise SQLite (local development fallback)
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-if DATABASE_URL:
-    # Use PostgreSQL with dj_database_url for parsing DATABASE_URL
-    DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=False,  # Set to True for production if needed, but Render handles SSL
-        )
-    }
-    
-    # PostgreSQL-specific optimizations
-    if DATABASES['default'].get('ENGINE') == 'django.db.backends.postgresql':
-        DATABASES['default']['OPTIONS'] = {
-            'connect_timeout': 10,
-        }
-        # Enable atomic requests for PostgreSQL (best practice)
-        # Each HTTP request is wrapped in a transaction
-        DATABASES['default']['ATOMIC_REQUESTS'] = True
-        
-        # Force Django to use psycopg3 if available (for Python 3.13 compatibility)
-        # Django 4.2+ will automatically detect psycopg3, but we ensure it's available
-        try:
-            import psycopg
-            # psycopg3 is available, Django will use it automatically
-        except ImportError:
-            try:
-                import psycopg2
-                # psycopg2 is available, Django will use it
-            except ImportError:
-                raise Exception("Neither psycopg3 nor psycopg2 is installed. Please install psycopg[binary] or psycopg2-binary.")
-else:
-    # Fallback to SQLite for local development (when DATABASE_URL is not set)
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
-    }
+# PostgreSQL database configuration for Render deployment
+DATABASES = {
+    'default': dj_database_url.parse(
+        'postgresql://myproject_free_db_user:0vTVWsNZ5Mr3o7CzzYuYmvbceqlM5u3N@dpg-d5b76u75r7bs73a71on0-a/myproject_free_db',
+        conn_max_age=600,
+        ssl_require=True
+    )
+}
 
 
 # Password validation
