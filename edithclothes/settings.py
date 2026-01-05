@@ -370,7 +370,7 @@ else:
     
     # Add Render backend URL to CSRF trusted origins
     if IS_RENDER:
-        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend-1")
         render_backend_url = f"https://{render_service_name}.onrender.com"
         if render_backend_url not in CSRF_TRUSTED_ORIGINS:
             CSRF_TRUSTED_ORIGINS.append(render_backend_url)
@@ -390,7 +390,7 @@ BASE_URL = os.environ.get("BASE_URL", "")
 if not BASE_URL and not DEBUG:
     # Auto-detect base URL in production
     if IS_RENDER:
-        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend")
+        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "myshp-backend-1")
         BASE_URL = f"https://{render_service_name}.onrender.com"
     else:
         # Fallback to custom domain if set
