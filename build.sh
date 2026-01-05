@@ -30,10 +30,10 @@ pip install -r requirements.txt
 
 # CRITICAL: Explicitly install psycopg3 (psycopg) for Python 3.13 compatibility
 echo "🔍 Installing PostgreSQL adapter (psycopg3)..."
-pip install --no-cache-dir "psycopg[binary]==3.1.18" || {
+pip install --no-cache-dir "psycopg[binary]==3.3.2" || {
     echo "⚠️  Standard install failed, trying alternative..."
     pip install --no-cache-dir --upgrade pip setuptools wheel
-    pip install --no-cache-dir "psycopg[binary]==3.1.18"
+    pip install --no-cache-dir "psycopg[binary]==3.3.2"
 }
 
 # Verify psycopg3 installation
@@ -60,7 +60,7 @@ echo "🔍 Verifying PostgreSQL adapter (psycopg)..."
 python -c "import psycopg; print(f'psycopg {psycopg.__version__} installed')" || {
     echo "❌ ERROR: psycopg not installed correctly"
     echo "📦 Attempting to reinstall psycopg..."
-    pip install --force-reinstall --no-cache-dir "psycopg[binary]==3.1.18" || exit 1
+    pip install --force-reinstall --no-cache-dir "psycopg[binary]==3.3.2" || exit 1
     python -c "import psycopg; print(f'psycopg {psycopg.__version__} installed')" || {
         echo "❌ ERROR: psycopg installation failed"
         exit 1
