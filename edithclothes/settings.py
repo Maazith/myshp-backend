@@ -176,10 +176,10 @@ STATICFILES_FINDERS = [
 ]
 
 # WhiteNoise configuration for static files
-# Use CompressedStaticFilesStorage (more reliable than ManifestStorage)
-# ManifestStorage can cause issues if manifest.json is missing or corrupted
+# Use CompressedManifestStaticFilesStorage for production (as requested)
+# This provides cache-busting and compression
 if not DEBUG:
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 else:
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 
