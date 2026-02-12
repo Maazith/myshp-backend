@@ -1,2 +1,1 @@
-web: python manage.py migrate --noinput && gunicorn edithclothes.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120 --log-level info
-
+web: gunicorn edithclothes.wsgi --log-file -

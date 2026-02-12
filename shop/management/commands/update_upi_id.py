@@ -39,3 +39,12 @@ class Command(BaseCommand):
             self.style.WARNING('Note: You may need to update the QR code image in the admin panel.')
         )
 
+
+
+
+
+
+
+
+
+

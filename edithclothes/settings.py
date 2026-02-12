@@ -27,43 +27,27 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-9o(%hgr4x$ii_ct2m(hw8=nj7g$06izqws-$_u@%5u795&_to^")
+# Railway provides SECRET_KEY via environment variables in production.
+SECRET_KEY = os.environ.get("SECRET_KEY")
+if not SECRET_KEY:
+    # Safe fallback for local development so the app doesn't crash
+    from django.core.management.utils import get_random_secret_key
+    SECRET_KEY = get_random_secret_key()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Auto-detect production environment
 IS_RENDER = os.environ.get("RENDER", "").lower() == "true"
 IS_PRODUCTION = os.environ.get("ENVIRONMENT", "").lower() == "production" or IS_RENDER
 
-# DEBUG should be False in production, True in development
-DEBUG = os.environ.get("DEBUG", "False" if IS_PRODUCTION else "True").lower() == "true"
+# DEBUG is controlled via environment variable (Railway sets DEBUG)
+DEBUG = os.environ.get("DEBUG", "False") == "True"
 
-# Production: Only allow specific hosts
-# Development: Allow all (when DEBUG=True)
-if DEBUG:
-    ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1"]
-else:
-    # Production hosts - Render uses specific domain format
-    ALLOWED_HOSTS = [
-        "localhost",
-        "127.0.0.1",
-        "api.edithcloths.com",
-        ".onrender.com",  # Allow all Render subdomains (e.g., myshp-backend.onrender.com)
-        "myshp-frontend.vercel.app",
-        ".vercel.app",  # Allow all Vercel subdomains
-        "edithcloths.com",
-        "www.edithcloths.com",
-    ]
-    
-    # Dynamically add Render service URL if on Render
-    if IS_RENDER:
-        render_service_name = os.environ.get("RENDER_SERVICE_NAME", "")
-        if render_service_name:
-            ALLOWED_HOSTS.append(f"{render_service_name}.onrender.com")
-    
-    # Allow additional hosts from environment variable
-    additional_hosts = os.environ.get("ALLOWED_HOSTS", "")
-    if additional_hosts:
-        ALLOWED_HOSTS.extend([host.strip() for host in additional_hosts.split(",")])
+# Configure allowed hosts from environment for Railway (comma-separated)
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS if host.strip()]
+
+# Sensible defaults for local development when no ALLOWED_HOSTS is set
+if DEBUG and not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
 
 
 # Application definition
@@ -118,14 +102,26 @@ WSGI_APPLICATION = 'edithclothes.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# PostgreSQL database configuration for Render deployment
-DATABASES = {
-    'default': dj_database_url.parse(
-        'postgresql://myproject_free_db_user:0vTVWsNZ5Mr3o7CzzYuYmvbceqlM5u3N@dpg-d5b76u75r7bs73a71on0-a/myproject_free_db',
-        conn_max_age=600,
-        ssl_require=True
-    )
-}
+# Railway / production database configuration
+# Railway provides DATABASE_URL; fall back to SQLite locally when it's missing.
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=False,
+        )
+    }
+else:
+    # Safe local development fallback when DATABASE_URL is not set
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
